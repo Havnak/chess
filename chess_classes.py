@@ -28,7 +28,7 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♙" if self.color == "B" else "♟"
+        self.piece_art = "♙" if self.color == "W" else "♟"
 
     def update_legal_moves(self, Board):
         pass
@@ -37,31 +37,31 @@ class Pawn(Piece):
 class Rook(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♖" if self.color == "B" else "♜"
+        self.piece_art = "♖" if self.color == "W" else "♜"
 
 
 class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♘" if self.color == "B" else "♞"
+        self.piece_art = "♘" if self.color == "W" else "♞"
 
 
 class Bishop(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♗" if self.color == "B" else "♝"
+        self.piece_art = "♗" if self.color == "W" else "♝"
 
 
 class Queen(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♕" if self.color == "B" else "♛"
+        self.piece_art = "♕" if self.color == "W" else "♛"
 
 
 class King(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♔" if self.color == "B" else "♚"
+        self.piece_art = "♔" if self.color == "W" else "♚"
 
 
 class Board:
