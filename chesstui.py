@@ -89,7 +89,16 @@ class ChessApp(App):
     # SUB_TITLE = "Chess in your terminal"
     CSS_PATH = "statics/chess.tcss"
 
-    BINDINGS = [("q", "quit", "Quit"), ("r", "reset_borad", "Reset board")]
+    BINDINGS = [("q", "quit", "Quit"), ("r", "reset_board", "Reset board")]
+
+    def update_board(self):
+        for row, line in enumerate(board.chess_board):
+                    for col, piece in enumerate(line):
+                        self.query_one(f"#r{row}c{col}").piece_art = Text(piece.piece_art, style="black") if piece else ""
+
+    def action_reset_board(self):
+        board.reset()
+        self.update_board()
 
     def compose(self) -> ComposeResult:
         # yield Header()
@@ -108,7 +117,7 @@ class ChessApp(App):
                 selected_piece._set(piece, square_pressed)
                 square_pressed.highlight()
                 # TODO: Update visuals on board to show legal moves
-                
+
             else:
                 selected_piece.reset()
                 square_pressed.standard_style()
@@ -119,11 +128,7 @@ class ChessApp(App):
             
             if (square_pressed.row, square_pressed.col) in selected_piece.piece.legal_moves or True : # FIXME
                 board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
-
-                # --- Updating chess board to reflect moved piece --- 
-                for row, line in enumerate(board.chess_board):
-                    for col, piece in enumerate(line):
-                        self.query_one(f"#r{row}c{col}").piece_art = Text(piece.piece_art, style="black") if piece else ""
+                self.update_board()
 
             selected_piece.reset()
 
