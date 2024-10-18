@@ -72,7 +72,7 @@ class Board:
 
     def __str__(self):
         board_str = "\n"
-        for row in self.chess_board:
+        for row in reversed(self.chess_board):
             row_str = " ".join(str(piece) if piece else "." for piece in row)
             board_str += row_str + "\n"
         return board_str
