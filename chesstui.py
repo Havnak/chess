@@ -54,7 +54,6 @@ class ChessBoardVisual(Container):
                         row=row, col=col, piece_art=piece_art, id=f"r{row}c{col}"
                     )
 
-
 class SelectedPiece:
     """
     Piece currently selected
@@ -101,17 +100,15 @@ class ChessApp(App):
     def handle_square_pressed(self, event: ChessSquareVisual.Pressed):
         square_pressed = event.button
         piece = board.chess_board[square_pressed.row][square_pressed.col]
-        # assert str(board) == str(visual_board), (
-        #         f"board:{board}   visual:{visual_board}"
-        #     )
-
+ 
         # --- Selecting piece to move ---
         if not selected_piece.piece:
             if piece and piece.color == board.turn:
-                assert piece != None
+                assert piece!=None
                 selected_piece._set(piece, square_pressed)
                 square_pressed.highlight()
                 # TODO: Update visuals on board to show legal moves
+                
             else:
                 selected_piece.reset()
                 square_pressed.standard_style()
@@ -119,22 +116,14 @@ class ChessApp(App):
         # --- Moving selected piece ---
         else:
             selected_piece.square.standard_style()
-
-            if (
-                square_pressed.row,
-                square_pressed.col,
-            ) in selected_piece.piece.legal_moves or True:  # FIXME
+            
+            if (square_pressed.row, square_pressed.col) in selected_piece.piece.legal_moves or True : # FIXME
                 board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
 
-                # --- updating visuals ---
+                # --- Updating chess board to reflect moved piece --- 
                 for row, line in enumerate(board.chess_board):
                     for col, piece in enumerate(line):
-                        self.query_one(f"#r{row}c{col}").piece_art = (
-                            Text(piece.piece_art, style="black") if piece else ""
-                        )
-
-            # assert str(board) == str(visual_board), (
-            #     f"board:{board}   visual:{visual_board}"
-            # )
+                        self.query_one(f"#r{row}c{col}").piece_art = Text(piece.piece_art, style="black") if piece else ""
 
             selected_piece.reset()
+
