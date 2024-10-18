@@ -2,14 +2,16 @@
 Classes for all chess pieces and board
 """
 
+import numpy as np
 
 class Piece:
     """
     Parent class for pieces
     """
-    def __init__(self, color):
+    def __init__(self, color, row, col):
         self.color = color
-        self.position = ""
+        self.row = row
+        self.col = col
         self.legal_moves = ""
         self.piece_art = ""
 
@@ -18,8 +20,8 @@ class Piece:
 
 
 class Pawn(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♙" if self.color == "W" else "♟"
 
     def update_legal_moves(self, Board):
@@ -27,32 +29,32 @@ class Pawn(Piece):
 
 
 class Rook(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♖" if self.color == "W" else "♜"
 
 
 class Knight(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♘" if self.color == "W" else "♞"
 
 
 class Bishop(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♗" if self.color == "W" else "♝"
 
 
 class Queen(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♕" if self.color == "W" else "♛"
 
 
 class King(Piece):
-    def __init__(self, color):
-        super().__init__(color)
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
         self.piece_art = "♔" if self.color == "W" else "♚"
 
 
@@ -60,32 +62,41 @@ class Board:
 
     def __init__(self):
         self.chess_board = self.setup_board()
+        self.turn = "W"
+
+    def __str__(self):
+        board_str = "\n"
+        for row in self.chess_board:
+            row_str = " ".join(str(piece) if piece else "." for piece in row)
+            board_str += row_str + "\n"
+        return board_str
 
     def setup_board(self):
         board = []
 
         row1 = [
-            Rook("W"),
-            Knight("W"),
-            Bishop("W"),
-            Queen("W"),
-            King("W"),
-            Bishop("W"),
-            Knight("W"),
-            Rook("W"),
+            Rook("W", row=0, col=0),
+            Knight("W", row=0, col=1),
+            Bishop("W", row=0, col=2),
+            Queen("W", row=0, col=3),
+            King("W", row=0, col=4),
+            Bishop("W", row=0, col=5),
+            Knight("W", row=0, col=6),
+            Rook("W", row=0, col=7),
         ]
-        row2 = [Pawn("W") for _ in range(8)]
 
-        row7 = [Pawn("B") for _ in range(8)]
+        row2 = [Pawn("W", row=1, col=col) for col in range(8)]
+        row7 = [Pawn("B", row=6, col=col) for col in range(8)]
+        
         row8 = [
-            Rook("B"),
-            Knight("B"),
-            Bishop("B"),
-            Queen("B"),
-            King("B"),
-            Bishop("B"),
-            Knight("B"),
-            Rook("B"),
+            Rook("B", row=7, col=0),
+            Knight("B", row=7, col=1),
+            Bishop("B", row=7, col=2),
+            Queen("B", row=7, col=3),
+            King("B", row=7, col=4),
+            Bishop("B", row=7, col=5),
+            Knight("B", row=7, col=6),
+            Rook("B", row=7, col=7),
         ]
 
         board.append(row1)
@@ -98,19 +109,23 @@ class Board:
         board.append(row8)
         return board
 
-    def __str__(self):
-        board_str = "\n"
-        for row in self.chess_board:
-            row_str = " ".join(str(piece) if piece else "." for piece in row)
-            board_str += row_str + "\n"
-        return board_str
+   
 
+    def move(self, piece: Piece, row, col):
+        """
+        Move Piece to [row, col]
 
-class Game:
-    def __init__(self):
-        self.turn = "W"
-
+        Arguments:
+            piece<Piece>: piece to be moved
+            square<[row, col]>: square moved to
+        """
+        self.chess_board[piece.row][piece.col] = None 
+        self.chess_board[row][col] = piece
+        
 
 if __name__ == "__main__":
     B = Board()
+    print(B)
+
+    B.move(B.chess_board[1][1], *[2,1])
     print(B)
