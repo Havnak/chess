@@ -235,12 +235,3 @@ class Board:
 
     def capture(self, row, col):
         self.chess_board[row][col] = None
-
-
-if __name__ == "__main__":
-    B = Board()
-    print(B)
-
-    B.move(B.chess_board[1][0], *(2, 0))
-    B.move(B.chess_board[2][0], *(3, 0))
-    print(B)
