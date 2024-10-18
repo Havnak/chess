@@ -7,12 +7,18 @@ import numpy as np
 class Piece:
     """
     Parent class for pieces
+
+    variables:
+        color<str>: hex color
+        row<int>
+        col<int>
+        legal_moves<list[tuple(int)]>: list of tuples of legal moves [(row, col)]
     """
     def __init__(self, color, row, col):
         self.color = color
         self.row = row
         self.col = col
-        self.legal_moves = ""
+        self.legal_moves = []
         self.piece_art = ""
 
     def __str__(self):
@@ -22,7 +28,7 @@ class Piece:
 class Pawn(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♙" if self.color == "W" else "♟"
+        self.piece_art = "♙" if self.color == "B" else "♟"
 
     def update_legal_moves(self, Board):
         pass
@@ -31,31 +37,31 @@ class Pawn(Piece):
 class Rook(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♖" if self.color == "W" else "♜"
+        self.piece_art = "♖" if self.color == "B" else "♜"
 
 
 class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♘" if self.color == "W" else "♞"
+        self.piece_art = "♘" if self.color == "B" else "♞"
 
 
 class Bishop(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♗" if self.color == "W" else "♝"
+        self.piece_art = "♗" if self.color == "B" else "♝"
 
 
 class Queen(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♕" if self.color == "W" else "♛"
+        self.piece_art = "♕" if self.color == "B" else "♛"
 
 
 class King(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
-        self.piece_art = "♔" if self.color == "W" else "♚"
+        self.piece_art = "♔" if self.color == "B" else "♚"
 
 
 class Board:
@@ -121,11 +127,11 @@ class Board:
         """
         self.chess_board[piece.row][piece.col] = None 
         self.chess_board[row][col] = piece
-        
+
 
 if __name__ == "__main__":
     B = Board()
     print(B)
 
-    B.move(B.chess_board[1][1], *[2,1])
+    B.move(B.chess_board[-2][0], *[-4,0])
     print(B)

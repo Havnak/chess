@@ -3,7 +3,7 @@ from textual.widgets import Footer, Header, Static, Button
 from textual.containers import Grid, Container
 from textual import on
 from rich.text import Text
-from classes import *
+from chess_classes import *
 
 
 class ChessSquare(Button):
