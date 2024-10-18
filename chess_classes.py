@@ -4,6 +4,7 @@ Classes for all chess pieces and board
 
 import numpy as np
 
+
 class Piece:
     """
     Parent class for pieces
@@ -14,12 +15,17 @@ class Piece:
         col<int>
         legal_moves<list[tuple(int)]>: list of tuples of legal moves [(row, col)]
     """
+
     def __init__(self, color, row, col):
         self.color = color
         self.row = row
         self.col = col
         self.legal_moves = []
         self.piece_art = ""
+
+    def update_position(self, row, col):
+        self.row = row
+        self.col = col
 
     def __str__(self):
         return self.piece_art
@@ -93,7 +99,7 @@ class Board:
 
         row2 = [Pawn("W", row=1, col=col) for col in range(8)]
         row7 = [Pawn("B", row=6, col=col) for col in range(8)]
-        
+
         row8 = [
             Rook("B", row=7, col=0),
             Knight("B", row=7, col=1),
@@ -109,13 +115,11 @@ class Board:
         board.append(row2)
 
         for _ in range(4):
-            board.append([None] * 8)  # Empty rows
+            board.append([None] * 8)
 
         board.append(row7)
         board.append(row8)
         return board
-
-   
 
     def move(self, piece: Piece, row, col):
         """
@@ -125,7 +129,8 @@ class Board:
             piece<Piece>: piece to be moved
             square<[row, col]>: square moved to
         """
-        self.chess_board[piece.row][piece.col] = None 
+        self.chess_board[piece.row][piece.col] = None
+        piece.update_position(*(row, col))
         self.chess_board[row][col] = piece
 
 
@@ -133,5 +138,6 @@ if __name__ == "__main__":
     B = Board()
     print(B)
 
-    B.move(B.chess_board[-2][0], *[-4,0])
+    B.move(B.chess_board[1][0], *(2, 0))
+    B.move(B.chess_board[2][0], *(3, 0))
     print(B)
