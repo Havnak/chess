@@ -63,18 +63,21 @@ class SelectedPiece:
     Piece currently selected
 
     variables:
-        self.piece: Piece
+        self.piece<Piece>
+        self.square<ChessSquareVisual>
+        self.kill_piece<Bool>
 
     functions:
-        _set(self, piece: Piece)
+        set_(self, piece: Piece)
         reset(self)
     """
 
     def __init__(self):
         self.piece: Piece = None
         self.square: ChessSquareVisual = None
+        self.kill_piece: bool = False
 
-    def _set(self, piece: Piece, square: ChessSquareVisual):
+    def set_(self, piece: Piece, square: ChessSquareVisual):
         self.piece = piece
         self.square = square
 
@@ -93,7 +96,7 @@ class ChessApp(App):
     # SUB_TITLE = "Chess in your terminal"
     CSS_PATH = "statics/chess.tcss"
 
-    BINDINGS = [("q", "quit", "Quit"), ("r", "reset_board", "Reset board")]
+    BINDINGS = [("q", "quit", "Quit"), ("r", "reset_board", "Reset board"), ("k", "kill_piece", "Capture piece")]
 
     def update_board(self):
         for row, line in enumerate(board.chess_board):
@@ -106,6 +109,9 @@ class ChessApp(App):
         board.reset()
         self.update_board()
 
+    def action_kill_piece(self):
+        selected_piece.kill_piece=True
+
     def compose(self) -> ComposeResult:
         # yield Header()
         yield visual_board
@@ -116,16 +122,21 @@ class ChessApp(App):
         square_pressed = event.button
         piece = board.chess_board[square_pressed.row][square_pressed.col]
 
+        if selected_piece.kill_piece:
+            board.capture(square_pressed.row, square_pressed.col)
+            self.update_board()
+            selected_piece.kill_piece = False
+            return
+
         # --- Selecting piece to move ---
         if not selected_piece.piece:
             if piece and piece.color == board.turn:
-                selected_piece._set(piece, square_pressed)
+                selected_piece.set_(piece, square_pressed)
                 square_pressed.highlight()
                 selected_piece.piece.update_legal_moves(board)
 
                 for move in selected_piece.piece.legal_moves:
                     self.query_one("#r%dc%d" % move).highlight_moves()
-                # TODO: Update visuals on board to show legal moves
 
             else:
                 selected_piece.reset()
