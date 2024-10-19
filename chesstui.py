@@ -1,11 +1,11 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, Static, Button, Digits
+from textual.widgets import Footer, Button
 from textual.containers import Grid, Container
 from textual import on
 from textual.reactive import reactive
 from rich.text import Text
-from copy import copy, deepcopy
-from chess_classes import *
+
+from chess import *
 
 
 class ChessSquareVisual(Button):
@@ -32,6 +32,9 @@ class ChessSquareVisual(Button):
 
     def highlight_moves(self):
         self.styles.background = "#FFA500"
+
+    def highlight_check(self):
+        self.styles.background = "red"
 
     def render(self):
         return self.piece_art
@@ -109,6 +112,10 @@ class ChessApp(App):
                 square.piece_art = Text(piece.piece_art, style="black") if piece else ""
                 square.standard_style()
 
+        king, check = board.detect_check()
+        if check:
+            self.query_one(f"#r{king.row}c{king.col}").highlight_check()
+
     def action_reset_board(self):
         board.reset()
         self.update_board()
@@ -149,8 +156,7 @@ class ChessApp(App):
         else:
             selected_piece.square.standard_style()
 
-            if (
-                square_pressed.row,
+            if (square_pressed.row,
                 square_pressed.col,
             ) in selected_piece.piece.legal_moves:
                 board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
