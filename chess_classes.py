@@ -326,6 +326,62 @@ class King(Piece):
 
     def update_legal_moves(self, board):
         self.legal_moves = []
+        if self.row < 7:
+
+            if (
+                not board.chess_board[self.row + 1][self.col]
+                or board.chess_board[self.row + 1][self.col].color != self.color
+            ):
+                self.legal_moves.append((self.row + 1, self.col))
+
+            if self.col < 7:
+                if (
+                    not board.chess_board[self.row + 1][self.col + 1]
+                    or board.chess_board[self.row + 1][self.col + 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row + 1, self.col + 1))
+
+            if self.col > 0:
+                if (
+                    not board.chess_board[self.row][self.col + 1]
+                    or board.chess_board[self.row][self.col + 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row, self.col + 1))
+
+        if self.row > 0:
+            if self.col < 7:
+                if (
+                    not board.chess_board[self.row - 1][self.col + 1]
+                    or board.chess_board[self.row - 1][self.col + 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row - 1, self.col + 1))
+
+            if (
+                not board.chess_board[self.row - 1][self.col]
+                or board.chess_board[self.row - 1][self.col].color != self.color
+            ):
+                self.legal_moves.append((self.row - 1, self.col))
+
+            if self.col > 0:
+                if (
+                    not board.chess_board[self.row - 1][self.col - 1]
+                    or board.chess_board[self.row - 1][self.col - 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row - 1, self.col - 1))
+
+        if self.col > 0:
+            if (
+                not board.chess_board[self.row][self.col - 1]
+                or board.chess_board[self.row][self.col - 1].color != self.color
+            ):
+                self.legal_moves.append((self.row, self.col - 1))
+
+            if self.row < 7:
+                if (
+                    not board.chess_board[self.row + 1][self.col - 1]
+                    or board.chess_board[self.row + 1][self.col - 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row + 1, self.col - 1))
 
 
 class Board:
