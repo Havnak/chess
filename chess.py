@@ -34,7 +34,6 @@ class Piece:
         self.pos = (row, col)
         self.legal_moves = []
         self.piece_art = ""
-        self.en_passant_able: bool = False
         self.moves = []
 
     def update_position(self, row, col):
@@ -60,8 +59,7 @@ class Piece:
             ):
                 if (
                     not board.chess_board[row + self.row][col + self.col]
-                    or board.chess_board[row + self.row][col + self.col].color
-                    != self.color
+                    or board.chess_board[row + self.row][col + self.col].color != self.color
                 ):
                     self.legal_moves.append((row + self.row, col + self.col))
 
@@ -74,6 +72,13 @@ class Pawn(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♙" if self.color == "W" else "♟"
+        if color == "W":
+            self.moves = [(1, 0)]
+            self.attacking_moves = [(1, 1), (1, -1)]
+
+        if color == "B":
+            self.moves = [(-1, 0)]
+            self.attacking_moves = [(-1, 1), (-1, -1)]
 
     def update_legal_moves(self, board):
 
@@ -83,54 +88,61 @@ class Pawn(Piece):
 
         self.legal_moves = []
 
-        # --- I dont like this, but I dont want to fix it --- 
-        if not board.chess_board[self.row + direction][self.col]:
-            self.legal_moves.append((self.row + direction, self.col))
+        # --- moves ---
+        row, col = self.moves[0]
+        if not board.chess_board[self.row + row][self.col + col]:
+            self.legal_moves.append((self.row + row, self.col + col))
 
-            if (
-                self.row == 1
-                and not board.chess_board[self.row + 2][self.col]
-                and self.color == "W"
+            if ((self.row, self.color) in [(1, "W"), (6, "B")]
+                and not board.chess_board[self.row + 2*row][self.col + 2*col]
             ):
-                self.legal_moves.append((self.row + 2, self.col))
-                self.en_passant_able = True
-                self.moves_since_en_passant_able = 0
+                self.legal_moves.append((self.row + 2*row, self.col + 2*col))
 
-            elif (
-                self.row == 6
-                and not board.chess_board[self.row - 2][self.col]
-                and self.color == "B"
-            ):
-                self.legal_moves.append((self.row - 2, self.col))
-                self.en_passant_able = True
-                self.moves_since_en_passant_able = 0
+        # --- attacks ---
+        for row, col in self.attacking_moves:
+            if isinstance(board.chess_board[self.row + row][self.col + col], Piece):
+                if board.chess_board[self.row + row][self.col + col].color != self.color:
+                    self.legal_moves.append((self.row + row, self.col + col))
 
-        if self.col < 7:
-            if board.chess_board[self.row + direction][self.col + 1]:
-                if (
-                    board.chess_board[self.row + direction][self.col + 1].color
-                    != self.color
-                ):
-                    self.legal_moves.append((self.row + direction, self.col + 1))
+        # --- en passant ---
+        if (self.row, self.color) in [(3, "B"),(4, "W")]:
+            for col in [1, -1]:
+                if (self.row, self.col + col) == board.en_passant_able:
+                    self.legal_moves.append((self.row + direction, self.col + col))
 
-        if self.col > 0:
-            if board.chess_board[self.row + direction][self.col - 1]:
-                if (
-                    board.chess_board[self.row + direction][self.col - 1].color
-                    != self.color
-                ):
-                    self.legal_moves.append((self.row + direction, self.col - 1))
 
-        if self.color == "W" and self.row == 4:
-            if self.col > 0:
-                if isinstance(board.chess_board[self.row][self.col - 1], Pawn):
-                    if board.chess_board[self.row][self.col - 1].en_passant_able:
-                        self.legal_moves.append((self.row + 1, self.col - 1))
+class King(Piece):
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
+        self.piece_art = "♔" if self.color == "W" else "♚"
+        self.has_moved = False
+        self.moves = [
+            (1, 1),
+            (1, -1),
+            (1, 0),
+            (-1, 1),
+            (-1, -1),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+        ]
 
-            if self.col < 7:
-                if isinstance(board.chess_board[self.row][self.col + 1], Pawn):
-                    if board.chess_board[self.row][self.col + 1].en_passant_able:
-                        self.legal_moves.append((self.row + 1, self.col + 1))
+
+class Knight(Piece):
+    def __init__(self, color, **kwargs):
+        super().__init__(color, **kwargs)
+        self.piece_art = "♘" if self.color == "W" else "♞"
+        self.moves = [
+            (1, 2),
+            (-1, -2),
+            (1, -2),
+            (-1, 2),
+            (2, 1),
+            (-2, -1),
+            (2, -1),
+            (-2, 1),
+        ]
+
 
 
 class Slider(Piece):
@@ -163,22 +175,6 @@ class Rook(Slider):
         self.moves = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
 
-class Knight(Piece):
-    def __init__(self, color, **kwargs):
-        super().__init__(color, **kwargs)
-        self.piece_art = "♘" if self.color == "W" else "♞"
-        self.moves = [
-            (1, 2),
-            (-1, -2),
-            (1, -2),
-            (-1, 2),
-            (2, 1),
-            (-2, -1),
-            (2, -1),
-            (-2, 1),
-        ]
-
-
 class Bishop(Slider):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
@@ -201,22 +197,6 @@ class Queen(Slider):
             (0, -1),
         ]
 
-
-class King(Piece):
-    def __init__(self, color, **kwargs):
-        super().__init__(color, **kwargs)
-        self.piece_art = "♔" if self.color == "W" else "♚"
-        self.has_moved = False
-        self.moves = [
-            (1, 1),
-            (1, -1),
-            (1, 0),
-            (-1, 1),
-            (-1, -1),
-            (-1, 0),
-            (0, 1),
-            (0, -1),
-        ]
 
 
 def check(board) -> tuple:
@@ -296,6 +276,7 @@ class Board:
     def __init__(self):
         self.chess_board = self.setup_board()
         self.turn = "W"
+        self.en_passant_able = ()
 
     def __str__(self):
         board_str = "\n"
@@ -363,28 +344,25 @@ class Board:
             piece<Piece>: piece to be moved
             square<[row, col]>: square moved to
         """
-        self.chess_board[piece.row][piece.col] = None
-        piece.update_position(*(row, col))
-        self.chess_board[row][col] = piece
 
         direction = 1 if piece.color == "W" else -1
 
         # --- en passant ---
-        if (
-            isinstance(piece, Pawn)
-            and isinstance(self.chess_board[row - direction][col], Pawn)
-            and self.chess_board[row - direction][col].en_passant_able
-        ):
-            self.capture(row - direction, col)
+        if (isinstance(piece, Pawn)):
+            if (row - direction, col) == self.en_passant_able:
+                self.capture(row - direction, col)
 
-        for row in self.chess_board:
-            for piece in row:
-                if isinstance(piece, Pawn) and piece.en_passant_able:
-                    if piece.moves_since_en_passant_able == 2:
-                        piece.en_passant_able = False
-                    else:
-                        piece.moves_since_en_passant_able += 1
+        self.en_passant_able = ()
+        if isinstance(piece, Pawn):
+            if ((piece.row, piece.color) in [(1,"W"), (6, "B")] # If pawn is on start row
+                and row == piece.row + 2*direction
+                ):
+                    self.en_passant_able = (row, col)
 
+        self.chess_board[piece.row][piece.col] = None
+        piece.update_position(*(row, col))
+        self.chess_board[row][col] = piece
+        
         # --- turn finished ---
         self.turn = {"W": "B", "B": "W"}[self.turn]
 
