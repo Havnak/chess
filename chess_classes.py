@@ -113,40 +113,40 @@ class Pawn(Piece):
                         self.legal_moves.append((self.row + 1, self.col + 1))
 
 
-def update_legal_moves_straight_line(piece: Piece, board):
+def update_legal_moves_straight(piece: Piece, board):
     legal_moves = []
-    if piece.col<7:
-            for col in range(piece.col+1, 8):
-                if not board.chess_board[piece.row][col]:
-                    legal_moves.append((piece.row,col))
-                else: 
-                    if board.chess_board[piece.row][col].color != piece.color:
-                        legal_moves.append((piece.row,col))
-                    break
-        
-    if piece.col>0:
-        for col in range(piece.col-1, -1, -1):
+    if piece.col < 7:
+        for col in range(piece.col + 1, 8):
             if not board.chess_board[piece.row][col]:
                 legal_moves.append((piece.row, col))
-            else: 
+            else:
                 if board.chess_board[piece.row][col].color != piece.color:
                     legal_moves.append((piece.row, col))
                 break
 
-    if piece.row<7:
-        for row in range(piece.row+1, 8):
-            if not board.chess_board[row][piece.col]:
-                legal_moves.append((row,piece.col))
-            else: 
-                if board.chess_board[row][piece.col].color != piece.color:
-                    legal_moves.append((row,piece.col))
+    if piece.col > 0:
+        for col in range(piece.col - 1, -1, -1):
+            if not board.chess_board[piece.row][col]:
+                legal_moves.append((piece.row, col))
+            else:
+                if board.chess_board[piece.row][col].color != piece.color:
+                    legal_moves.append((piece.row, col))
                 break
 
-    if piece.row>0:
-        for row in range(piece.row-1, -1, -1):
+    if piece.row < 7:
+        for row in range(piece.row + 1, 8):
             if not board.chess_board[row][piece.col]:
                 legal_moves.append((row, piece.col))
-            else: 
+            else:
+                if board.chess_board[row][piece.col].color != piece.color:
+                    legal_moves.append((row, piece.col))
+                break
+
+    if piece.row > 0:
+        for row in range(piece.row - 1, -1, -1):
+            if not board.chess_board[row][piece.col]:
+                legal_moves.append((row, piece.col))
+            else:
                 if board.chess_board[row][piece.col].color != piece.color:
                     legal_moves.append((row, piece.col))
                 break
@@ -161,44 +161,64 @@ class Rook(Piece):
         self.has_moved = False
 
     def update_legal_moves(self, board):
-        self.legal_moves = [] 
-        self.legal_moves += update_legal_moves_straight_line(self, board)
+        self.legal_moves = []
+        self.legal_moves += update_legal_moves_straight(self, board)
+
 
 class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♘" if self.color == "W" else "♞"
-    
 
     def update_legal_moves(self, board):
         self.legal_moves = []
-        
-        if self.col>0:
-            if self.row<6:
-                if not board.chess_board[self.row+2][self.col-1] or board.chess_board[self.row+2][self.col-1].color != self.color:
-                    self.legal_moves.append((self.row+2, self.col-1))
-            
-            if self.row>1:
-                if not board.chess_board[self.row-2][self.col-1] or board.chess_board[self.row-2][self.col-1].color != self.color:
-                    self.legal_moves.append((self.row-2, self.col-1))
 
-            if self.col>1:
-                if self.row<7:
-                    if not board.chess_board[self.row+1][self.col-2] or board.chess_board[self.row+1][self.col-2].color != self.color:
-                        self.legal_moves.append((self.row+1, self.col-2))
-                
-                if self.row>0:
-                    if not board.chess_board[self.row-1][self.col-2] or board.chess_board[self.row-1][self.col-2].color != self.color:
-                        self.legal_moves.append((self.row-1, self.col-2))
+        if self.col > 0:
+            if self.row < 6:
+                if (
+                    not board.chess_board[self.row + 2][self.col - 1]
+                    or board.chess_board[self.row + 2][self.col - 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row + 2, self.col - 1))
 
-        if self.col<7:
-            if self.row<6:
-                if not board.chess_board[self.row+2][self.col+1] or board.chess_board[self.row+2][self.col+1].color != self.color:
-                    self.legal_moves.append((self.row+2, self.col+1))
-            
-            if self.row>1:
-                if not board.chess_board[self.row-2][self.col+1] or board.chess_board[self.row-2][self.col+1].color != self.color:
-                    self.legal_moves.append((self.row-2, self.col+1))
+            if self.row > 1:
+                if (
+                    not board.chess_board[self.row - 2][self.col - 1]
+                    or board.chess_board[self.row - 2][self.col - 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row - 2, self.col - 1))
+
+            if self.col > 1:
+                if self.row < 7:
+                    if (
+                        not board.chess_board[self.row + 1][self.col - 2]
+                        or board.chess_board[self.row + 1][self.col - 2].color
+                        != self.color
+                    ):
+                        self.legal_moves.append((self.row + 1, self.col - 2))
+
+                if self.row > 0:
+                    if (
+                        not board.chess_board[self.row - 1][self.col - 2]
+                        or board.chess_board[self.row - 1][self.col - 2].color
+                        != self.color
+                    ):
+                        self.legal_moves.append((self.row - 1, self.col - 2))
+
+        if self.col < 7:
+            if self.row < 6:
+                if (
+                    not board.chess_board[self.row + 2][self.col + 1]
+                    or board.chess_board[self.row + 2][self.col + 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row + 2, self.col + 1))
+
+            if self.row > 1:
+                if (
+                    not board.chess_board[self.row - 2][self.col + 1]
+                    or board.chess_board[self.row - 2][self.col + 1].color != self.color
+                ):
+                    self.legal_moves.append((self.row - 2, self.col + 1))
 
             if self.col < 6:
                 if self.row < 7:
@@ -242,7 +262,7 @@ def update_legal_moves_diagonal(piece: Piece, board):
         while True:
             col += 1
             row -= 1
-            if row<0:
+            if row < 0:
                 break
 
             if not board.chess_board[row][col]:
@@ -261,7 +281,7 @@ def update_legal_moves_diagonal(piece: Piece, board):
         while True:
             col -= 1
             row += 1
-            if col<0:
+            if col < 0:
                 break
 
             if not board.chess_board[row][col]:
@@ -273,7 +293,7 @@ def update_legal_moves_diagonal(piece: Piece, board):
                 break
     except:
         pass
-    
+
     try:
         col = piece.col
         row = piece.row
@@ -281,9 +301,9 @@ def update_legal_moves_diagonal(piece: Piece, board):
             col -= 1
             row -= 1
 
-            if row<0 or col<0:
+            if row < 0 or col < 0:
                 break
-            
+
             if not board.chess_board[row][col]:
                 legal_moves.append((row, col))
 
@@ -293,7 +313,7 @@ def update_legal_moves_diagonal(piece: Piece, board):
                 break
     except:
         pass
-   
+
     return legal_moves
 
 

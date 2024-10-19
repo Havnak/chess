@@ -96,7 +96,11 @@ class ChessApp(App):
     # SUB_TITLE = "Chess in your terminal"
     CSS_PATH = "statics/chess.tcss"
 
-    BINDINGS = [("q", "quit", "Quit"), ("r", "reset_board", "Reset board"), ("k", "kill_piece", "Capture piece")]
+    BINDINGS = [
+        ("q", "quit", "Quit"),
+        ("r", "reset_board", "Reset board"),
+        ("k", "kill_piece", "Capture piece"),
+    ]
 
     def update_board(self):
         for row, line in enumerate(board.chess_board):
@@ -110,10 +114,9 @@ class ChessApp(App):
         self.update_board()
 
     def action_kill_piece(self):
-        selected_piece.kill_piece=True
+        selected_piece.kill_piece = True
 
     def compose(self) -> ComposeResult:
-        # yield Header()
         yield visual_board
         yield Footer()
 
