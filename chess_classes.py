@@ -200,14 +200,101 @@ class Knight(Piece):
                 if not board.chess_board[self.row-2][self.col+1] or board.chess_board[self.row-2][self.col+1].color != self.color:
                     self.legal_moves.append((self.row-2, self.col+1))
 
-            if self.col<6:
-                if self.row<7:
-                    if not board.chess_board[self.row+1][self.col+2] or board.chess_board[self.row+1][self.col+2].color != self.color:
-                        self.legal_moves.append((self.row+1, self.col+2))
-                
-                if self.row>0:
-                    if not board.chess_board[self.row-1][self.col+2] or board.chess_board[self.row-1][self.col+2].color != self.color:
-                        self.legal_moves.append((self.row-1, self.col+2))
+            if self.col < 6:
+                if self.row < 7:
+                    if (
+                        not board.chess_board[self.row + 1][self.col + 2]
+                        or board.chess_board[self.row + 1][self.col + 2].color
+                        != self.color
+                    ):
+                        self.legal_moves.append((self.row + 1, self.col + 2))
+
+                if self.row > 0:
+                    if (
+                        not board.chess_board[self.row - 1][self.col + 2]
+                        or board.chess_board[self.row - 1][self.col + 2].color
+                        != self.color
+                    ):
+                        self.legal_moves.append((self.row - 1, self.col + 2))
+
+
+def update_legal_moves_diagonal(piece: Piece, board):
+    legal_moves = []
+    # --- Truly horrible code, close your eyes and scroll to line 321 ---
+    try:
+        col = piece.col
+        row = piece.row
+        while True:
+            col += 1
+            row += 1
+            if not board.chess_board[row][col]:
+                legal_moves.append((row, col))
+            else:
+                if board.chess_board[row][col].color != piece.color:
+                    legal_moves.append((row, col))
+                break
+    except:
+        pass
+
+    try:
+        col = piece.col
+        row = piece.row
+        while True:
+            col += 1
+            row -= 1
+            if row<0:
+                break
+
+            if not board.chess_board[row][col]:
+                legal_moves.append((row, col))
+
+            else:
+                if board.chess_board[row][col].color != piece.color:
+                    legal_moves.append((row, col))
+                break
+    except:
+        pass
+
+    try:
+        col = piece.col
+        row = piece.row
+        while True:
+            col -= 1
+            row += 1
+            if col<0:
+                break
+
+            if not board.chess_board[row][col]:
+                legal_moves.append((row, col))
+
+            else:
+                if board.chess_board[row][col].color != piece.color:
+                    legal_moves.append((row, col))
+                break
+    except:
+        pass
+    
+    try:
+        col = piece.col
+        row = piece.row
+        while True:
+            col -= 1
+            row -= 1
+
+            if row<0 or col<0:
+                break
+            
+            if not board.chess_board[row][col]:
+                legal_moves.append((row, col))
+
+            else:
+                if board.chess_board[row][col].color != piece.color:
+                    legal_moves.append((row, col))
+                break
+    except:
+        pass
+   
+    return legal_moves
 
 
 class Bishop(Piece):
@@ -217,6 +304,7 @@ class Bishop(Piece):
 
     def update_legal_moves(self, board):
         self.legal_moves = []
+        self.legal_moves += update_legal_moves_diagonal(self, board)
 
 
 class Queen(Piece):
@@ -226,8 +314,9 @@ class Queen(Piece):
 
     def update_legal_moves(self, board):
         self.legal_moves = []
-        self.legal_moves += update_legal_moves_straight_line(self, board)
-
+        self.legal_moves += update_legal_moves_straight(
+            self, board
+        ) + update_legal_moves_diagonal(self, board)
 
 
 class King(Piece):
