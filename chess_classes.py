@@ -113,6 +113,47 @@ class Pawn(Piece):
                         self.legal_moves.append((self.row + 1, self.col + 1))
 
 
+def update_legal_moves_straight_line(piece: Piece, board):
+    legal_moves = []
+    if piece.col<7:
+            for col in range(piece.col+1, 8):
+                if not board.chess_board[piece.row][col]:
+                    legal_moves.append((piece.row,col))
+                else: 
+                    if board.chess_board[piece.row][col].color != piece.color:
+                        legal_moves.append((piece.row,col))
+                    break
+        
+    if piece.col>0:
+        for col in range(piece.col-1, -1, -1):
+            if not board.chess_board[piece.row][col]:
+                legal_moves.append((piece.row, col))
+            else: 
+                if board.chess_board[piece.row][col].color != piece.color:
+                    legal_moves.append((piece.row, col))
+                break
+
+    if piece.row<7:
+        for row in range(piece.row+1, 8):
+            if not board.chess_board[row][piece.col]:
+                legal_moves.append((row,piece.col))
+            else: 
+                if board.chess_board[row][piece.col].color != piece.color:
+                    legal_moves.append((row,piece.col))
+                break
+
+    if piece.row>0:
+        for row in range(piece.row-1, -1, -1):
+            if not board.chess_board[row][piece.col]:
+                legal_moves.append((row, piece.col))
+            else: 
+                if board.chess_board[row][piece.col].color != piece.color:
+                    legal_moves.append((row, piece.col))
+                break
+
+    return legal_moves
+
+
 class Rook(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
@@ -120,48 +161,53 @@ class Rook(Piece):
         self.has_moved = False
 
     def update_legal_moves(self, board):
-        legal_moves = [] 
-
-        if self.col<7:
-            for col in range(self.col+1, 8):
-                if not board.chess_board[self.row][col]:
-                    self.legal_moves.append((self.row,col))
-                else: 
-                    if board.chess_board[self.row][col].color != self.color:
-                        self.legal_moves.append((self.row,col))
-                    break
-        
-        if self.col>0:
-            for col in range(self.col-1, -1, -1):
-                if not board.chess_board[self.row][col]:
-                    self.legal_moves.append((self.row, col))
-                else: 
-                    if board.chess_board[self.row][col].color != self.color:
-                        self.legal_moves.append((self.row, col))
-                    break
-
-        if self.row<7:
-            for row in range(self.row+1, 8):
-                if not board.chess_board[row][self.col]:
-                    self.legal_moves.append((row,self.col))
-                else: 
-                    if board.chess_board[row][self.col].color != self.color:
-                        self.legal_moves.append((row,self.col))
-                    break
-
-        if self.row>0:
-            for row in range(self.row-1, -1, -1):
-                if not board.chess_board[row][self.col]:
-                    self.legal_moves.append((row, self.col))
-                else: 
-                    if board.chess_board[row][self.col].color != self.color:
-                        self.legal_moves.append((row, self.col))
-                    break
+        self.legal_moves = [] 
+        self.legal_moves += update_legal_moves_straight_line(self, board)
 
 class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♘" if self.color == "W" else "♞"
+    
+
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+        
+        if self.col>0:
+            if self.row<6:
+                if not board.chess_board[self.row+2][self.col-1] or board.chess_board[self.row+2][self.col-1].color != self.color:
+                    self.legal_moves.append((self.row+2, self.col-1))
+            
+            if self.row>1:
+                if not board.chess_board[self.row-2][self.col-1] or board.chess_board[self.row-2][self.col-1].color != self.color:
+                    self.legal_moves.append((self.row-2, self.col-1))
+
+            if self.col>1:
+                if self.row<7:
+                    if not board.chess_board[self.row+1][self.col-2] or board.chess_board[self.row+1][self.col-2].color != self.color:
+                        self.legal_moves.append((self.row+1, self.col-2))
+                
+                if self.row>0:
+                    if not board.chess_board[self.row-1][self.col-2] or board.chess_board[self.row-1][self.col-2].color != self.color:
+                        self.legal_moves.append((self.row-1, self.col-2))
+
+        if self.col<7:
+            if self.row<6:
+                if not board.chess_board[self.row+2][self.col+1] or board.chess_board[self.row+2][self.col+1].color != self.color:
+                    self.legal_moves.append((self.row+2, self.col+1))
+            
+            if self.row>1:
+                if not board.chess_board[self.row-2][self.col+1] or board.chess_board[self.row-2][self.col+1].color != self.color:
+                    self.legal_moves.append((self.row-2, self.col+1))
+
+            if self.col<6:
+                if self.row<7:
+                    if not board.chess_board[self.row+1][self.col+2] or board.chess_board[self.row+1][self.col+2].color != self.color:
+                        self.legal_moves.append((self.row+1, self.col+2))
+                
+                if self.row>0:
+                    if not board.chess_board[self.row-1][self.col+2] or board.chess_board[self.row-1][self.col+2].color != self.color:
+                        self.legal_moves.append((self.row-1, self.col+2))
 
 
 class Bishop(Piece):
@@ -169,17 +215,28 @@ class Bishop(Piece):
         super().__init__(color, **kwargs)
         self.piece_art = "♗" if self.color == "W" else "♝"
 
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+
 
 class Queen(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♕" if self.color == "W" else "♛"
 
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+        self.legal_moves += update_legal_moves_straight_line(self, board)
+
+
 
 class King(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♔" if self.color == "W" else "♚"
+
+    def update_legal_moves(self, board):
+        self.legal_moves = []
 
 
 class Board:
