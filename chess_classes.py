@@ -112,15 +112,51 @@ class Pawn(Piece):
                     if board.chess_board[self.row][self.col + 1].en_passant_able:
                         self.legal_moves.append((self.row + 1, self.col + 1))
 
-        def update_legal_moves1(self, board):
-            self.legal_moves = []
-
 
 class Rook(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♖" if self.color == "W" else "♜"
+        self.has_moved = False
 
+    def update_legal_moves(self, board):
+        legal_moves = [] 
+
+        if self.col<7:
+            for col in range(self.col+1, 8):
+                if not board.chess_board[self.row][col]:
+                    self.legal_moves.append((self.row,col))
+                else: 
+                    if board.chess_board[self.row][col].color != self.color:
+                        self.legal_moves.append((self.row,col))
+                    break
+        
+        if self.col>0:
+            for col in range(self.col-1, -1, -1):
+                if not board.chess_board[self.row][col]:
+                    self.legal_moves.append((self.row, col))
+                else: 
+                    if board.chess_board[self.row][col].color != self.color:
+                        self.legal_moves.append((self.row, col))
+                    break
+
+        if self.row<7:
+            for row in range(self.row+1, 8):
+                if not board.chess_board[row][self.col]:
+                    self.legal_moves.append((row,self.col))
+                else: 
+                    if board.chess_board[row][self.col].color != self.color:
+                        self.legal_moves.append((row,self.col))
+                    break
+
+        if self.row>0:
+            for row in range(self.row-1, -1, -1):
+                if not board.chess_board[row][self.col]:
+                    self.legal_moves.append((row, self.col))
+                else: 
+                    if board.chess_board[row][self.col].color != self.color:
+                        self.legal_moves.append((row, self.col))
+                    break
 
 class Knight(Piece):
     def __init__(self, color, **kwargs):
