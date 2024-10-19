@@ -50,11 +50,24 @@ class Piece:
     def update_legal_moves(self, board):
         self.legal_moves = []
         for row, col in self.moves:
-            if all([row + self.row < 8, row + self.row >= 0, col + self.col < 8, col + self.col >= 0]):
-                if (not board.chess_board[row + self.row][col + self.col] 
-                    or board.chess_board[row + self.row][col + self.col].color != self.color
+            if all(
+                [
+                    row + self.row < 8,
+                    row + self.row >= 0,
+                    col + self.col < 8,
+                    col + self.col >= 0,
+                ]
+            ):
+                if (
+                    not board.chess_board[row + self.row][col + self.col]
+                    or board.chess_board[row + self.row][col + self.col].color
+                    != self.color
                 ):
                     self.legal_moves.append((row + self.row, col + self.col))
+
+    def get_legal_moves(self, board):
+        self.update_legal_moves(board)
+        return self.legal_moves
 
 
 class Pawn(Piece):
@@ -70,6 +83,7 @@ class Pawn(Piece):
 
         self.legal_moves = []
 
+        # --- I dont like this, but I dont want to fix it --- 
         if not board.chess_board[self.row + direction][self.col]:
             self.legal_moves.append((self.row + direction, self.col))
 
@@ -123,14 +137,13 @@ class Slider(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.moves = []
-    
+
     def update_legal_moves(self, board):
         self.legal_moves = []
         for dir_row, dir_col in self.moves:
             row, col = dir_row + self.row, dir_col + self.col
             while all([row < 8, row >= 0, col < 8, col >= 0]):
-                if (not board.chess_board[row][col] 
-                ):
+                if not board.chess_board[row][col]:
                     self.legal_moves.append((row, col))
 
                 else:
@@ -154,21 +167,39 @@ class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♘" if self.color == "W" else "♞"
-        self.moves = [(1, 2), (-1, -2), (1, -2), (-1, 2), (2, 1), (-2, -1), (2, -1), (-2, 1)]
+        self.moves = [
+            (1, 2),
+            (-1, -2),
+            (1, -2),
+            (-1, 2),
+            (2, 1),
+            (-2, -1),
+            (2, -1),
+            (-2, 1),
+        ]
 
 
 class Bishop(Slider):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♗" if self.color == "W" else "♝"
-        self.moves = [(1,1), (1,-1), (-1,1), (-1,-1)]
+        self.moves = [(1, 1), (1, -1), (-1, 1), (-1, -1)]
 
 
 class Queen(Slider):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
         self.piece_art = "♕" if self.color == "W" else "♛"
-        self.moves = [(1,1), (1,-1), (-1,1), (-1,-1), (1, 0), (-1, 0), (0, 1), (0, -1)]
+        self.moves = [
+            (1, 1),
+            (1, -1),
+            (1, 0),
+            (-1, 1),
+            (-1, -1),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+        ]
 
 
 class King(Piece):
@@ -176,99 +207,91 @@ class King(Piece):
         super().__init__(color, **kwargs)
         self.piece_art = "♔" if self.color == "W" else "♚"
         self.has_moved = False
-        self.moves =  [ 
-                    (1, -1), (1, 0), (1, 1),
-                    (0, -1),         (0, 1),
-                    (-1,-1), (-1,0), (-1,1)]
+        self.moves = [
+            (1, 1),
+            (1, -1),
+            (1, 0),
+            (-1, 1),
+            (-1, -1),
+            (-1, 0),
+            (0, 1),
+            (0, -1),
+        ]
 
 
+def check(board) -> tuple:
+    chess_board = board.chess_board
+    output = (None, False)
+    for row in chess_board:
+        for piece in row:
+            if output[1]:
+                return output
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            if (
-                not board.chess_board[self.row - 1][self.col]
-                or board.chess_board[self.row - 1][self.col].color != self.color
-            ):
-                self.legal_moves.append((self.row - 1, self.col))
-
-            if self.col > 0:
-                if (
-                    not board.chess_board[self.row - 1][self.col - 1]
-                    or board.chess_board[self.row - 1][self.col - 1].color != self.color
-                ):
-                    self.legal_moves.append((self.row - 1, self.col - 1))
-
-        if self.col > 0:
-            if (
-                not board.chess_board[self.row][self.col - 1]
-                or board.chess_board[self.row][self.col - 1].color != self.color
-            ):
-                self.legal_moves.append((self.row, self.col - 1))
-
-            if self.row < 7:
-                if (
-                    not board.chess_board[self.row + 1][self.col - 1]
-                    or board.chess_board[self.row + 1][self.col - 1].color != self.color
-                ):
-                    self.legal_moves.append((self.row + 1, self.col - 1))
+            if isinstance(piece, King):
+                king: King = piece
+                direction = 1 if king.color == "W" else -1
+                output = (
+                    king,
+                    (
+                        # --- Check pawn ---
+                        any(
+                            isinstance(chess_board[row][col], Pawn)
+                            and chess_board[row][col].color != king.color
+                            for row, col in [
+                                (king.row + direction, king.col + 1),
+                                (king.row + direction, king.col - 1),
+                            ]
+                        )
+                        # --- Check straight line ---
+                        or any(
+                            (
+                                isinstance(chess_board[row][col], Rook)
+                                or isinstance(chess_board[row][col], Queen)
+                            )
+                            and chess_board[row][col].color != king.color
+                            for row, col in Rook(
+                                king.color, row=king.row, col=king.col
+                            ).get_legal_moves(board)
+                        )
+                        # --- Check diagonals ---
+                        or any(
+                            (
+                                isinstance(chess_board[row][col], Bishop)
+                                or isinstance(chess_board[row][col], Queen)
+                            )
+                            and chess_board[row][col].color != king.color
+                            for row, col in Bishop(
+                                king.color, row=king.row, col=king.col
+                            ).get_legal_moves(board)
+                        )
+                        # --- Check by horsie ---
+                        or any(
+                            (
+                                isinstance(chess_board[row][col], Knight)
+                                and chess_board[row][col].color != king.color
+                            )
+                            for row, col in Knight(
+                                king.color, row=king.row, col=king.col
+                            ).get_legal_moves(board)
+                        )
+                    ),
+                )
+    return output
 
 
 class Board:
+    """
+    Board class, all game logic happens here.
+
+    functions:
+        setup_board(): Sets up game, pieces on starting positions
+
+        move(piece, row, col): handles moving logic
+
+        reset(): calls setup_board() and sets white to turn
+
+        capture(row, col): removes piece on chess_borad[row][col]
+    """
 
     def __init__(self):
         self.chess_board = self.setup_board()
@@ -280,6 +303,15 @@ class Board:
             row_str = " ".join(str(piece) if piece else "." for piece in row)
             board_str += row_str + "\n"
         return board_str
+
+    # def __getitem__(self, index):
+    #     return self.chess_board[index]
+
+    # def __setitem__(self, index, value):
+    #     self.chess_board[index] = value
+
+    # def __len__(self):
+    #     return len(self.chess_board)
 
     def setup_board(self):
         board = []
@@ -334,6 +366,7 @@ class Board:
         self.chess_board[piece.row][piece.col] = None
         piece.update_position(*(row, col))
         self.chess_board[row][col] = piece
+
         direction = 1 if piece.color == "W" else -1
 
         # --- en passant ---
@@ -355,5 +388,19 @@ class Board:
         # --- turn finished ---
         self.turn = {"W": "B", "B": "W"}[self.turn]
 
+    def detect_check(self):
+        return check(self)
+
     def capture(self, row, col):
         self.chess_board[row][col] = None
+
+
+if __name__ == "__main__":
+    B = Board()
+
+    print(B)
+    B.move(B.chess_board[0][4], 1, 3)
+    B.move(B.chess_board[7][3], 6, 4)
+    B.move(B.chess_board[6][3], 2, 4)
+    print(B)
+    B.detect_check()
