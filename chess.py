@@ -58,8 +58,8 @@ class Piece:
                 ]
             ):
                 if (
-                    not board.chess_board[row + self.row][col + self.col]
-                    or board.chess_board[row + self.row][col + self.col].color != self.color
+                    not board[row + self.row][col + self.col]
+                    or board[row + self.row][col + self.col].color != self.color
                 ):
                     self.legal_moves.append((row + self.row, col + self.col))
 
@@ -90,18 +90,18 @@ class Pawn(Piece):
 
         # --- moves ---
         row, col = self.moves[0]
-        if not board.chess_board[self.row + row][self.col + col]:
+        if not board[self.row + row][self.col + col]:
             self.legal_moves.append((self.row + row, self.col + col))
 
             if ((self.row, self.color) in [(1, "W"), (6, "B")]
-                and not board.chess_board[self.row + 2*row][self.col + 2*col]
+                and not board[self.row + 2*row][self.col + 2*col]
             ):
                 self.legal_moves.append((self.row + 2*row, self.col + 2*col))
 
         # --- attacks ---
         for row, col in self.attacking_moves:
-            if isinstance(board.chess_board[self.row + row][self.col + col], Piece):
-                if board.chess_board[self.row + row][self.col + col].color != self.color:
+            if isinstance(board[self.row + row][self.col + col], Piece):
+                if board[self.row + row][self.col + col].color != self.color:
                     self.legal_moves.append((self.row + row, self.col + col))
 
         # --- en passant ---
@@ -155,11 +155,11 @@ class Slider(Piece):
         for dir_row, dir_col in self.moves:
             row, col = dir_row + self.row, dir_col + self.col
             while all([row < 8, row >= 0, col < 8, col >= 0]):
-                if not board.chess_board[row][col]:
+                if not board[row][col]:
                     self.legal_moves.append((row, col))
 
                 else:
-                    if board.chess_board[row][col].color != self.color:
+                    if board[row][col].color != self.color:
                         self.legal_moves.append((row, col))
                     break
 
@@ -200,9 +200,8 @@ class Queen(Slider):
 
 
 def check(board) -> tuple:
-    chess_board = board.chess_board
     output = (None, False)
-    for row in chess_board:
+    for row in board:
         for piece in row:
             if output[1]:
                 return output
@@ -215,8 +214,8 @@ def check(board) -> tuple:
                     (
                         # --- Check pawn ---
                         any(
-                            isinstance(chess_board[row][col], Pawn)
-                            and chess_board[row][col].color != king.color
+                            isinstance(board[row][col], Pawn)
+                            and board[row][col].color != king.color
                             for row, col in [
                                 (king.row + direction, king.col + 1),
                                 (king.row + direction, king.col - 1),
@@ -225,10 +224,10 @@ def check(board) -> tuple:
                         # --- Check straight line ---
                         or any(
                             (
-                                isinstance(chess_board[row][col], Rook)
-                                or isinstance(chess_board[row][col], Queen)
+                                isinstance(board[row][col], Rook)
+                                or isinstance(board[row][col], Queen)
                             )
-                            and chess_board[row][col].color != king.color
+                            and board[row][col].color != king.color
                             for row, col in Rook(
                                 king.color, row=king.row, col=king.col
                             ).get_legal_moves(board)
@@ -236,10 +235,10 @@ def check(board) -> tuple:
                         # --- Check diagonals ---
                         or any(
                             (
-                                isinstance(chess_board[row][col], Bishop)
-                                or isinstance(chess_board[row][col], Queen)
+                                isinstance(board[row][col], Bishop)
+                                or isinstance(board[row][col], Queen)
                             )
-                            and chess_board[row][col].color != king.color
+                            and board[row][col].color != king.color
                             for row, col in Bishop(
                                 king.color, row=king.row, col=king.col
                             ).get_legal_moves(board)
@@ -247,8 +246,8 @@ def check(board) -> tuple:
                         # --- Check by horsie ---
                         or any(
                             (
-                                isinstance(chess_board[row][col], Knight)
-                                and chess_board[row][col].color != king.color
+                                isinstance(board[row][col], Knight)
+                                and board[row][col].color != king.color
                             )
                             for row, col in Knight(
                                 king.color, row=king.row, col=king.col
@@ -285,14 +284,14 @@ class Board:
             board_str += row_str + "\n"
         return board_str
 
-    # def __getitem__(self, index):
-    #     return self.chess_board[index]
+    def __getitem__(self, index):
+        return self.chess_board[index]
 
-    # def __setitem__(self, index, value):
-    #     self.chess_board[index] = value
+    def __setitem__(self, index, value):
+        self.chess_board[index] = value
 
-    # def __len__(self):
-    #     return len(self.chess_board)
+    def __len__(self):
+        return len(self.chess_board)
 
     def setup_board(self):
         board = []
@@ -374,11 +373,4 @@ class Board:
 
 
 if __name__ == "__main__":
-    B = Board()
-
-    print(B)
-    B.move(B.chess_board[0][4], 1, 3)
-    B.move(B.chess_board[7][3], 6, 4)
-    B.move(B.chess_board[6][3], 2, 4)
-    print(B)
-    B.detect_check()
+    print("Hi:)")
