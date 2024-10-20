@@ -11,9 +11,58 @@ def row_col_to_chess_notation(row, col):
 
 
 def chess_notation_to_row_col(chess_notation: str):
-    output = chess_notation[1] - 1
-    output += str(ord(chess_notation[0].lower()) - 97)
-    return output
+    return (ord(chess_notation[0].lower()) - 97, chess_notation[1] - 1)
+
+def on_straight(row1,col1, row2, col2) -> bool:
+    return (row1 == row2 or col1 == col2)
+
+def on_diagonal(row1, col1, row2, col2) -> bool:
+    """ """
+    if on_straight(row1, col1, row2, col2):
+        return False
+
+    diagonals = [np.array([1, 1, 0]), np.array([1, -1, 0]), np.array([-1, 1, 0]), np.array([-1, -1, 0])]
+    vector_pos1_pos2 = np.array([row2-row1, col2-col1, 0])
+    return not np.all([np.cross(vector_pos1_pos2, diagonal) for diagonal in diagonals]) # Vectors are parallel if cross product is 0, added 0 in z-direction for deprecation warning
+
+def on_line(row1, col1, row2, col2) -> bool:
+    return on_straight(row1, col1, row2, col2) or on_diagonal(row1, col1, row2, col2)
+
+def distance(row1, col1, row2, col2) -> float:
+    """
+    returns:
+        <float> of euclidian distance between (row1, col1) and (row2, col2)
+    """
+    return np.sqrt((row2-row1)**2 + (col2-col1)**2)
+
+def get_direction(row1, col1, row2, col2) -> tuple:
+    """
+    returns:
+        <tuple> of direction vector from pos(row1, col1) to pos(row2, col2)
+    """
+    if 0 not in [row2 - row1, col2 - col1]:
+        return round((row2-row1)/abs(row2-row1)), round((col2-col1)/abs(col2-col1))
+    if (row2-row1) != 0:
+        return round((row2-row1)/abs(row2-row1)), round(col2-col1)
+    if (col2-col1) != 0:
+        return round(row2-row1), round((col2-col1)/abs(col2-col1))
+
+def piece_between(row1, col1, row2, col2, board) -> list:
+    """
+    Return:
+        list of pieces between pos(row1, col1) and pos(row2, col2) 
+        or [] if none
+    """
+    pieces_between = []
+    d = distance(row1, col1, row2, col2)
+    for row in board:
+        for piece in row:
+            if not piece: continue
+            if piece.pos in [(row1, col1), (row2, col2)]: continue
+            if (on_line(row1, col1, row2, col2)):
+                if np.isclose(distance(*piece.pos, row1, col1) + distance(*piece.pos, row2, col2), d): # If B is between A and C, distance(A, C) is the same as distance(A, B) + distance(B, C)
+                    pieces_between.append(piece)
+    return pieces_between
 
 
 class Piece:
