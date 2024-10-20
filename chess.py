@@ -59,6 +59,45 @@ def piece_between(row1, col1, row2, col2, board) -> list:
                     pieces_between.append(piece)
     return pieces_between
 
+def check(board) -> tuple:
+    king = board.kings[board.turn]
+    for piece in board.pieces:
+        if piece.color == king.color:
+            continue
+
+        if piece.piece_type in ["b", "q"]:
+            if on_diagonal(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True
+
+        if piece.piece_type in ["r", "q"]:
+            if on_straight(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True
+
+        if piece.piece_type == "p":
+            for row, col in piece.attacking_moves:
+                if all([
+                        row + king.row < 8,
+                        row + king.row >= 0,
+                        col + king.col < 8,
+                        col + king.col >= 0,
+                        ]
+                ):
+                    if board[king.row - row][king.col - col]:
+                        if board[king.row - row][king.col - col].color != king.color:
+                            return king, True
+
+    return None, False
+
+def check_after_move(piece, row, col, board):
+        board_copy = copy.deepcopy(board)
+        piece_copy = board_copy[piece.row][piece.col]
+        board_copy.move(piece_copy, row, col)
+        board_copy.turn = piece.color
+        king, is_checked = check(board_copy)
+        if is_checked: return True
+        return False
 
 class Piece:
     """
@@ -114,37 +153,6 @@ class Piece:
                             if pieces_between[0] is self:
                                 return True, get_direction(*self.pos, *piece.pos)
         return False, (0, 0) 
-
-
-    def update_legal_moves(self, board):
-        self.legal_moves = []
-        moves = copy.copy(self.moves)
-        
-        # --- logic for pinning ---
-        pinned, direction = self.ispinned(board)
-        if pinned:
-            moves = []
-
-        for row, col in moves:
-            if all(
-                [
-                    row + self.row < 8,
-                    row + self.row >= 0,
-                    col + self.col < 8,
-                    col + self.col >= 0,
-                ]
-            ):
-                if (
-                    not board[row + self.row][col + self.col]
-                    or board[row + self.row][col + self.col].color != self.color
-                ):
-                    self.legal_moves.append((row + self.row, col + self.col))
-
-    def get_legal_moves(self, board):
-        self.update_legal_moves(board)
-        return self.legal_moves
-
-    
 
 
 class Pawn(Piece):
@@ -221,6 +229,31 @@ class King(Piece):
         ]
 
 
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+        moves = copy.copy(self.moves)
+    
+        for row, col in moves:
+            if all(
+                [
+                    row + self.row < 8,
+                    row + self.row >= 0,
+                    col + self.col < 8,
+                    col + self.col >= 0,
+                ]
+            ):
+                if (
+                    not board[row + self.row][col + self.col]
+                    or board[row + self.row][col + self.col].color != self.color
+                ):
+                    if not check_after_move(self, row + self.row, col + self.col, board):
+                        self.legal_moves.append((row + self.row, col + self.col))
+
+    def get_legal_moves(self, board):
+        self.update_legal_moves(board)
+        return self.legal_moves
+
+
 class Knight(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
@@ -237,6 +270,33 @@ class Knight(Piece):
             (-2, 1),
         ]
 
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+        moves = copy.copy(self.moves)
+        
+        # --- logic for pinning ---
+        pinned, direction = self.ispinned(board)
+        if pinned:
+            moves = []
+
+        for row, col in moves:
+            if all(
+                [
+                    row + self.row < 8,
+                    row + self.row >= 0,
+                    col + self.col < 8,
+                    col + self.col >= 0,
+                ]
+            ):
+                if (
+                    not board[row + self.row][col + self.col]
+                    or board[row + self.row][col + self.col].color != self.color
+                ):
+                    self.legal_moves.append((row + self.row, col + self.col))
+
+    def get_legal_moves(self, board):
+        self.update_legal_moves(board)
+        return self.legal_moves
 
 
 class Slider(Piece):
@@ -316,32 +376,6 @@ class Queen(Slider):
             (0, 1),
             (0, -1),
         ]
-
-
-
-def check(board) -> tuple:
-    king = board.kings[board.turn]
-    for piece in board.pieces:
-        if piece.color == king.color:
-            continue
-
-        if piece.piece_type in ["b", "q"]:
-            if on_diagonal(*king.pos, *piece.pos):
-                if not piece_between(*king.pos, *piece.pos, board):
-                    return king, True
-
-        if piece.piece_type in ["r", "q"]:
-            if on_straight(*king.pos, *piece.pos):
-                if not piece_between(*king.pos, *piece.pos, board):
-                    return king, True
-
-        if piece.piece_type == "p":
-            for row, col in piece.attacking_moves:
-                if board[king.row - row][king.col - col]:
-                    if board[king.row - row][king.col - col].color != king.color:
-                        return king, True
-
-    return None, False
 
 
 class Board:
