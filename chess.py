@@ -99,7 +99,7 @@ def check_after_move(piece, row, col, board):
         piece_copy = board_copy[piece.row][piece.col]
         board_copy.move(piece_copy, row, col)
         board_copy.turn = piece.color
-        king, is_checked = check(board_copy)
+        _, is_checked = check(board_copy)
         if is_checked: return True
         return False
 
@@ -135,6 +135,10 @@ class Piece:
         self.col = col
         self.pos = row, col
 
+
+    def get_legal_moves(self, board):
+        self.update_legal_moves(board)
+        return self.legal_moves
 
     def ispinned(self, board):
         king = board.kings[self.color]
@@ -255,10 +259,6 @@ class King(Piece):
             (0, 1),
             (0, -1),
         ]
-
-    def get_legal_moves(self, board):
-        self.update_legal_moves(board)
-        return self.legal_moves
 
 
 class Knight(Piece):
@@ -446,6 +446,14 @@ class Board:
         self.chess_board = self.setup_board()
         self.turn = "W"
 
+    def get_all_legal_moves(self):
+        legal_moves = []
+        for piece in self.pieces:
+            if piece.color == self.turn:
+                legal_moves += piece.get_legal_moves(self)
+        return legal_moves
+
+
     def move(self, piece: Piece, row, col):
         """
         Move Piece to [row, col]
@@ -475,7 +483,21 @@ class Board:
         self.chess_board[row][col] = piece
         
         # --- turn finished ---
-        self.turn = {"W": "B", "B": "W"}[self.turn]
+        self.turn = {"W": "B", "B": "W"}[self.turn]     
+                
+    def checkmate(self):
+        if len(self.get_all_legal_moves()) == 0:
+            _, in_check = check(self)
+            if in_check:
+                return True
+        return False
+
+    def stalemate(self):
+        if len(self.get_all_legal_moves()) == 0:
+            _, in_check = check(self)
+            if not in_check:
+                return True
+        return False
 
     def detect_check(self):
         return check(self)
