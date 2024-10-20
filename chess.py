@@ -154,6 +154,26 @@ class Piece:
                                 return True, get_direction(*self.pos, *piece.pos)
         return False, (0, 0) 
 
+    def update_legal_moves(self, board):
+        self.legal_moves = []
+        moves = copy.copy(self.moves)
+    
+        for row, col in moves:
+            if all(
+                [
+                    row + self.row < 8,
+                    row + self.row >= 0,
+                    col + self.col < 8,
+                    col + self.col >= 0,
+                ]
+            ):
+                if (
+                    not board[row + self.row][col + self.col]
+                    or board[row + self.row][col + self.col].color != self.color
+                ):
+                    if not check_after_move(self, row + self.row, col + self.col, board):
+                        self.legal_moves.append((row + self.row, col + self.col))
+
 
 class Pawn(Piece):
     def __init__(self, color, **kwargs):
@@ -177,11 +197,13 @@ class Pawn(Piece):
         row, col = self.moves
         if not pinned or pin_direction == (row, col):
             if not (board[self.row + row][self.col + col]):
-                self.legal_moves.append((self.row + row, self.col + col))
-                if ((self.row, self.color) in [(1, "W"), (6, "B")]
-                    and not board[self.row + 2*row][self.col + 2*col]
-                ):
-                    self.legal_moves.append((self.row + 2*row, self.col + 2*col))
+                if not check_after_move(self, self.row + row, self.col + col, board):
+                    self.legal_moves.append((self.row + row, self.col + col))
+                    if ((self.row, self.color) in [(1, "W"), (6, "B")]
+                        and not board[self.row + 2*row][self.col + 2*col]
+                    ):
+                        if not check_after_move(self, self.row + 2*row, self.col + 2*col, board):
+                            self.legal_moves.append((self.row + 2*row, self.col + 2*col))
 
         # --- attacks ---
         for row, col in self.attacking_moves:
@@ -195,7 +217,8 @@ class Pawn(Piece):
                 ):
                     if isinstance(board[self.row + row][self.col + col], Piece):
                         if board[self.row + row][self.col + col].color != self.color:
-                            self.legal_moves.append((self.row + row, self.col + col))
+                            if not check_after_move(self, self.row + row, self.col + col, board):
+                                self.legal_moves.append((self.row + row, self.col + col))
 
         # --- en passant ---
         if (self.row, self.color) in [(3, "B"),(4, "W")]:
@@ -208,7 +231,8 @@ class Pawn(Piece):
                         ]
                 ):
                     if (self.row, self.col + col) == board.en_passant_able:
-                        self.legal_moves.append((self.row + direction, self.col + col))
+                        if not check_after_move(self, self.row + row, self.col + col, board):
+                            self.legal_moves.append((self.row + row, self.col + col))
 
 
 class King(Piece):
@@ -227,27 +251,6 @@ class King(Piece):
             (0, 1),
             (0, -1),
         ]
-
-
-    def update_legal_moves(self, board):
-        self.legal_moves = []
-        moves = copy.copy(self.moves)
-    
-        for row, col in moves:
-            if all(
-                [
-                    row + self.row < 8,
-                    row + self.row >= 0,
-                    col + self.col < 8,
-                    col + self.col >= 0,
-                ]
-            ):
-                if (
-                    not board[row + self.row][col + self.col]
-                    or board[row + self.row][col + self.col].color != self.color
-                ):
-                    if not check_after_move(self, row + self.row, col + self.col, board):
-                        self.legal_moves.append((row + self.row, col + self.col))
 
     def get_legal_moves(self, board):
         self.update_legal_moves(board)
@@ -270,34 +273,6 @@ class Knight(Piece):
             (-2, 1),
         ]
 
-    def update_legal_moves(self, board):
-        self.legal_moves = []
-        moves = copy.copy(self.moves)
-        
-        # --- logic for pinning ---
-        pinned, direction = self.ispinned(board)
-        if pinned:
-            moves = []
-
-        for row, col in moves:
-            if all(
-                [
-                    row + self.row < 8,
-                    row + self.row >= 0,
-                    col + self.col < 8,
-                    col + self.col >= 0,
-                ]
-            ):
-                if (
-                    not board[row + self.row][col + self.col]
-                    or board[row + self.row][col + self.col].color != self.color
-                ):
-                    self.legal_moves.append((row + self.row, col + self.col))
-
-    def get_legal_moves(self, board):
-        self.update_legal_moves(board)
-        return self.legal_moves
-
 
 class Slider(Piece):
     def __init__(self, color, **kwargs):
@@ -317,11 +292,13 @@ class Slider(Piece):
                 row, col = dir_row + self.row, dir_col + self.col
                 while all([row < 8, row >= 0, col < 8, col >= 0]):
                     if not board[row][col]:
-                        self.legal_moves.append((row, col))
+                        if not check_after_move(self, row, col, board):
+                            self.legal_moves.append((row, col))
 
                     else:
                         if board[row][col].color != self.color:
-                            self.legal_moves.append((row, col))
+                            if not check_after_move(self, row, col, board):
+                                self.legal_moves.append((row, col))
                         break
 
                     col += dir_col
@@ -333,11 +310,13 @@ class Slider(Piece):
             row, col = dir_row + self.row, dir_col + self.col
             while all([row < 8, row >= 0, col < 8, col >= 0]):
                 if not board[row][col]:
-                    self.legal_moves.append((row, col))
+                    if not check_after_move(self, row, col, board):
+                        self.legal_moves.append((row, col))
 
                 else:
                     if board[row][col].color != self.color:
-                        self.legal_moves.append((row, col))
+                        if not check_after_move(self, row, col, board):
+                            self.legal_moves.append((row, col))
                     break
 
                 col += dir_col
@@ -503,7 +482,3 @@ class Board:
         for piece in self.pieces:
             if piece.pos == (row, col):
                 self.pieces.remove(piece)
-
-
-if __name__ == "__main__":
-    print("Hi:)")
