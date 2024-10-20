@@ -178,15 +178,29 @@ class Pawn(Piece):
         # --- attacks ---
         for row, col in self.attacking_moves:
             if not pinned or (row, col) == pin_direction:
-                if isinstance(board[self.row + row][self.col + col], Piece):
-                    if board[self.row + row][self.col + col].color != self.color:
-                        self.legal_moves.append((self.row + row, self.col + col))
+                if all([
+                        row + self.row < 8,
+                        row + self.row >= 0,
+                        col + self.col < 8,
+                        col + self.col >= 0,
+                        ]
+                ):
+                    if isinstance(board[self.row + row][self.col + col], Piece):
+                        if board[self.row + row][self.col + col].color != self.color:
+                            self.legal_moves.append((self.row + row, self.col + col))
 
         # --- en passant ---
         if (self.row, self.color) in [(3, "B"),(4, "W")]:
             for col in [1, -1]:
-                if (self.row, self.col + col) == board.en_passant_able:
-                    self.legal_moves.append((self.row + direction, self.col + col))
+                if all([
+                        row + self.row < 8,
+                        row + self.row >= 0,
+                        col + self.col < 8,
+                        col + self.col >= 0,
+                        ]
+                ):
+                    if (self.row, self.col + col) == board.en_passant_able:
+                        self.legal_moves.append((self.row + direction, self.col + col))
 
 
 class King(Piece):
