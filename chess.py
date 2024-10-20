@@ -60,6 +60,10 @@ def piece_between(row1, col1, row2, col2, board) -> list:
     return pieces_between
 
 def check(board) -> tuple:
+    """
+    Returns:
+        king, bool
+    """
     king = board.kings[board.turn]
     for piece in board.pieces:
         if piece.color == king.color:
@@ -78,10 +82,10 @@ def check(board) -> tuple:
         if piece.piece_type == "p":
             for row, col in piece.attacking_moves:
                 if all([
-                        row + king.row < 8,
-                        row + king.row >= 0,
-                        col + king.col < 8,
-                        col + king.col >= 0,
+                        king.row - row< 8,
+                        king.row - row>= 0,
+                        king.col - col < 8,
+                        king.col - col >= 0,
                         ]
                 ):
                     if board[king.row - row][king.col - col]:
