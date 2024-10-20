@@ -18,12 +18,7 @@ def on_straight(row1,col1, row2, col2) -> bool:
 
 def on_diagonal(row1, col1, row2, col2) -> bool:
     """ """
-    if on_straight(row1, col1, row2, col2):
-        return False
-
-    diagonals = [np.array([1, 1, 0]), np.array([1, -1, 0]), np.array([-1, 1, 0]), np.array([-1, -1, 0])]
-    vector_pos1_pos2 = np.array([row2-row1, col2-col1, 0])
-    return not np.all([np.cross(vector_pos1_pos2, diagonal) for diagonal in diagonals]) # Vectors are parallel if cross product is 0, added 0 in z-direction for deprecation warning
+    return (row1 - col1 == row2 - col2) or (row1 + col1 == row2 + col2)
 
 def on_line(row1, col1, row2, col2) -> bool:
     return on_straight(row1, col1, row2, col2) or on_diagonal(row1, col1, row2, col2)
