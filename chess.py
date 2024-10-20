@@ -306,62 +306,28 @@ class Queen(Slider):
 
 
 def check(board) -> tuple:
-    output = (None, False)
-    for row in board:
-        for piece in row:
-            if output[1]:
-                return output
+    king = board.kings[board.turn]
+    for piece in board.pieces:
+        if piece.color == king.color:
+            continue
 
-            if isinstance(piece, King):
-                king: King = piece
-                direction = 1 if king.color == "W" else -1
-                output = (
-                    king,
-                    (
-                        # --- Check pawn ---
-                        any(
-                            isinstance(board[row][col], Pawn)
-                            and board[row][col].color != king.color
-                            for row, col in [
-                                (king.row + direction, king.col + 1),
-                                (king.row + direction, king.col - 1),
-                            ]
-                        )
-                        # --- Check straight line ---
-                        or any(
-                            (
-                                isinstance(board[row][col], Rook)
-                                or isinstance(board[row][col], Queen)
-                            )
-                            and board[row][col].color != king.color
-                            for row, col in Rook(
-                                king.color, row=king.row, col=king.col
-                            ).get_legal_moves(board)
-                        )
-                        # --- Check diagonals ---
-                        or any(
-                            (
-                                isinstance(board[row][col], Bishop)
-                                or isinstance(board[row][col], Queen)
-                            )
-                            and board[row][col].color != king.color
-                            for row, col in Bishop(
-                                king.color, row=king.row, col=king.col
-                            ).get_legal_moves(board)
-                        )
-                        # --- Check horse ---
-                        or any(
-                            (
-                                isinstance(board[row][col], Knight)
-                                and board[row][col].color != king.color
-                            )
-                            for row, col in Knight(
-                                king.color, row=king.row, col=king.col
-                            ).get_legal_moves(board)
-                        )
-                    ),
-                )
-    return output
+        if piece.piece_type in ["b", "q"]:
+            if on_diagonal(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True
+
+        if piece.piece_type in ["r", "q"]:
+            if on_straight(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True
+
+        if piece.piece_type == "p":
+            for row, col in piece.attacking_moves:
+                if board[king.row - row][king.col - col]:
+                    if board[king.row - row][king.col - col].color != king.color:
+                        return king, True
+
+    return None, False
 
 
 class Board:
