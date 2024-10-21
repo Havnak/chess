@@ -64,52 +64,54 @@ def check(board) -> tuple:
     Returns:
         king, bool
     """
-    king = board.kings[board.turn]
-    for piece in board.pieces:
-        if piece.color == king.color:
-            continue
+    for king in board.kings.values():
+        for piece in board.pieces:
+            if piece.color == king.color:
+                continue
 
-        if piece.piece_type in ["b", "q"]:
-            if on_diagonal(*king.pos, *piece.pos):
-                if not piece_between(*king.pos, *piece.pos, board):
-                    return king, True
+            if piece.piece_type in ["b", "q"]:
+                if on_diagonal(*king.pos, *piece.pos):
+                    if not piece_between(*king.pos, *piece.pos, board):
+                        return king, True
 
-        if piece.piece_type in ["r", "q"]:
-            if on_straight(*king.pos, *piece.pos):
-                if not piece_between(*king.pos, *piece.pos, board):
-                    return king, True
+            if piece.piece_type in ["r", "q"]:
+                if on_straight(*king.pos, *piece.pos):
+                    if not piece_between(*king.pos, *piece.pos, board):
+                        return king, True
 
-        if piece.piece_type == "p":
-            for row, col in piece.attacking_moves:
-                if all([
-                        king.row - row< 8,
-                        king.row - row>= 0,
-                        king.col - col < 8,
-                        king.col - col >= 0,
-                        ]
-                ):
-                    if board[king.row - row][king.col - col]:
-                        if board[king.row - row][king.col - col].color != king.color:
-                            return king, True
+            if piece.piece_type == "p":
+                for row, col in piece.attacking_moves:
+                    if all([
+                            king.row - row< 8,
+                            king.row - row>= 0,
+                            king.col - col < 8,
+                            king.col - col >= 0,
+                            ]
+                    ):
+                        if board[king.row - row][king.col - col]:
+                            if board[king.row - row][king.col - col].color != king.color:
+                                return king, True
 
     return None, False
 
-def check_after_move(piece, row, col, board):
+def check_after_move(piece, row, col, board, color):
     board_copy = copy.deepcopy(board)
     board_copy.iscopy = True
     piece_copy = board_copy[piece.row][piece.col]
     board_copy.move(piece_copy, row, col)
-    board_copy.turn = piece.color
-    _, is_checked = check(board_copy)
-    if is_checked: return True
-    return False
+    board_copy.turn = color
+    king, is_checked = check(board_copy)
+    if not is_checked: 
+        return False
+    if king.color == color:
+        return True
 
-def checkmate_after_move(piece, row, col, board):
+def checkmate_after_move(piece, row, col, board, color):
     board_copy = copy.deepcopy(board)
     board_copy.iscopy = True
     piece_copy = board_copy[piece.row][piece.col]
     board_copy.move(piece_copy, row, col)
-    board_copy.turn = piece.color
+    board_copy.turn = color
     checkmate = board_copy.checkmate()
 
     if checkmate: return True
@@ -191,7 +193,7 @@ class Piece:
                     not board[row + self.row][col + self.col]
                     or board[row + self.row][col + self.col].color != self.color
                 ):
-                    if not check_after_move(self, row + self.row, col + self.col, board):
+                    if not check_after_move(self, row + self.row, col + self.col, board, self.color):
                         self.legal_moves.append((row + self.row, col + self.col))
 
 
@@ -217,12 +219,12 @@ class Pawn(Piece):
         row, col = self.moves
         if not pinned or pin_direction == (row, col):
             if not (board[self.row + row][self.col + col]):
-                if not check_after_move(self, self.row + row, self.col + col, board):
+                if not check_after_move(self, self.row + row, self.col + col, board, self.color):
                     self.legal_moves.append((self.row + row, self.col + col))
                     if ((self.row, self.color) in [(1, "W"), (6, "B")]
                         and not board[self.row + 2*row][self.col + 2*col]
                     ):
-                        if not check_after_move(self, self.row + 2*row, self.col + 2*col, board):
+                        if not check_after_move(self, self.row + 2*row, self.col + 2*col, board, self.color):
                             self.legal_moves.append((self.row + 2*row, self.col + 2*col))
 
         # --- attacks ---
@@ -237,7 +239,7 @@ class Pawn(Piece):
                 ):
                     if isinstance(board[self.row + row][self.col + col], Piece):
                         if board[self.row + row][self.col + col].color != self.color:
-                            if not check_after_move(self, self.row + row, self.col + col, board):
+                            if not check_after_move(self, self.row + row, self.col + col, board, self.color):
                                 self.legal_moves.append((self.row + row, self.col + col))
 
         # --- en passant ---
@@ -251,7 +253,7 @@ class Pawn(Piece):
                         ]
                 ):
                     if (self.row, self.col + col) == board.en_passant_able:
-                        if not check_after_move(self, self.row + row, self.col + col, board):
+                        if not check_after_move(self, self.row + row, self.col + col, board, self.color):
                             self.legal_moves.append((self.row + row, self.col + col))
 
 
@@ -308,12 +310,12 @@ class Slider(Piece):
                 row, col = dir_row + self.row, dir_col + self.col
                 while all([row < 8, row >= 0, col < 8, col >= 0]):
                     if not board[row][col]:
-                        if not check_after_move(self, row, col, board):
+                        if not check_after_move(self, row, col, board, self.color):
                             self.legal_moves.append((row, col))
 
                     else:
                         if board[row][col].color != self.color:
-                            if not check_after_move(self, row, col, board):
+                            if not check_after_move(self, row, col, board, self.color):
                                 self.legal_moves.append((row, col))
                         break
 
@@ -326,12 +328,12 @@ class Slider(Piece):
             row, col = dir_row + self.row, dir_col + self.col
             while all([row < 8, row >= 0, col < 8, col >= 0]):
                 if not board[row][col]:
-                    if not check_after_move(self, row, col, board):
+                    if not check_after_move(self, row, col, board, self.color):
                         self.legal_moves.append((row, col))
 
                 else:
                     if board[row][col].color != self.color:
-                        if not check_after_move(self, row, col, board):
+                        if not check_after_move(self, row, col, board, self.color):
                             self.legal_moves.append((row, col))
                     break
 
@@ -500,9 +502,9 @@ class Board:
             previous_position = row_col_to_chess_notation(*piece.pos)
 
         check = ""
-        if check_after_move(piece, row, col, self):
+        if check_after_move(piece, row, col, self, {"W": "B", "B": "W"}[piece.color]):
             check = "+"
-            if checkmate_after_move(piece, row, col, self):
+            if checkmate_after_move(piece, row, col, self, {"W": "B", "B": "W"}[piece.color]):
                 check = "#"
 
         self.moves_made.append(previous_position + capture + row_col_to_chess_notation(row, col) + check)
@@ -556,7 +558,7 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
-    b.move(b[1][1], 2, 1)
-    b.move(b[6][1], 4, 1)
+    b.move(b[7][4], 6, 4)
+    b.move(b[0][3], 1, 4)
     print(b)
     print(b.moves_made)
