@@ -74,6 +74,7 @@ class InfoBox(Container):
             yield Label("", id="gamestate")
             with Grid():
                 yield ScrollableContainer(id="moves")
+                # yield EvaluationBar(id="evalFish")
     
     def add_single_move(self, move: str, number):
         string = f"{number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
@@ -91,6 +92,13 @@ class InfoBox(Container):
             self.add_both_moves(moves[-2:], len(moves)//2)
         else:
             self.add_single_move(moves[-1], len(moves)//2+1)
+
+    def reset(self):
+        labels = self.query(Label)
+        if labels:
+            for label in labels:
+                label.remove()
+
 
 
 class SelectedPiece:
@@ -153,6 +161,7 @@ class ChessApp(App):
         global board
         board = Board()
         selected_piece.reset()
+        info_box.reset()
         self.update_board()
 
     @on(Button.Pressed, "#restart")
