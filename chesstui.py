@@ -1,6 +1,7 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Button
-from textual.containers import Grid, Container
+from textual.widgets import Footer, Button, Label
+from textual.containers import Grid, Container, Horizontal, Vertical, ScrollableContainer
+from textual.screen import ModalScreen
 from textual import on
 from textual.reactive import reactive
 from rich.text import Text
@@ -20,6 +21,7 @@ class ChessSquareVisual(Button):
         art = Text(piece_art, style="black")
         self.piece_art = art
         self.standard_style()
+        self.active_effect_duration = 0
 
     def standard_style(self):
         if (self.row + self.col) % 2 == 0:
@@ -60,6 +62,36 @@ class ChessBoardVisual(Container):
                         row=row, col=col, piece_art=piece_art, id=f"r{row}c{col}"
                     )
 
+class InfoBox(Container):
+    """ Widget to display information such as moves, game result, engine analysis and such """
+
+    def __init__(self, board, **kwargs):
+        super().__init__(**kwargs)
+        self.moves_made = board.moves_made
+    
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            yield Label("", id="gamestate")
+            with Grid():
+                yield ScrollableContainer(id="moves")
+    
+    def add_single_move(self, move: str, number):
+        string = f"{number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
+        move = Label(string, id="single")
+        self.query_one("#moves").mount(move)
+
+    def add_both_moves(self, move: list, number):
+        self.query_one("#single").remove()
+        string = f"{number}. {move[0]:>6} {move[1]:>6}" 
+        move = Label(string)
+        self.query_one("#moves").mount(move)
+
+    def update_moves(self, moves: list):
+        if len(moves) % 2 == 0:
+            self.add_both_moves(moves[-2:], len(moves)//2)
+        else:
+            self.add_single_move(moves[-1], len(moves)//2+1)
+
 
 class SelectedPiece:
     """
@@ -92,6 +124,7 @@ class SelectedPiece:
 board = Board()
 selected_piece = SelectedPiece()
 visual_board = ChessBoardVisual(board)
+info_box = InfoBox(board)
 
 
 class ChessApp(App):
@@ -106,8 +139,8 @@ class ChessApp(App):
     ]
 
     def update_board(self):
-        for row, line in enumerate(board.chess_board):
-            for col, piece in enumerate(line):
+        for row, rank in enumerate(board.chess_board):
+            for col, piece in enumerate(rank):
                 square = self.query_one(f"#r{row}c{col}")
                 square.piece_art = Text(piece.piece_art, style="black") if piece else ""
                 square.standard_style()
@@ -116,15 +149,31 @@ class ChessApp(App):
         if check:
             self.query_one(f"#r{king.row}c{king.col}").highlight_check()
 
-    def action_reset_board(self):
-        board.reset()
+    def restart(self):
+        global board
+        board = Board()
+        selected_piece.reset()
         self.update_board()
+
+    @on(Button.Pressed, "#restart")
+    def button_restart(self):
+        self.restart()
+
+    @on(Button.Pressed, "#quit")
+    def quit(self):
+        exit()
+
+
+    def action_reset_board(self):
+        self.restart()
 
     def action_kill_piece(self):
         selected_piece.kill_piece = True
 
     def compose(self) -> ComposeResult:
-        yield visual_board
+        with Horizontal():
+            yield visual_board
+            yield info_box
         yield Footer()
 
     @on(ChessSquareVisual.Pressed)
@@ -139,8 +188,9 @@ class ChessApp(App):
             return
 
         # --- Selecting piece to move ---
-        if not selected_piece.piece:
+        if (not selected_piece.piece or (piece.color == board.turn if piece else False)) and not selected_piece.piece is piece:
             if piece and piece.color == board.turn:
+                self.update_board()
                 selected_piece.set_(piece, square_pressed)
                 square_pressed.highlight()
                 selected_piece.piece.update_legal_moves(board)
@@ -161,5 +211,22 @@ class ChessApp(App):
             ) in selected_piece.piece.legal_moves:
                 board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
 
+                # --- promotion ---
+                if isinstance(selected_piece.piece, Pawn) and selected_piece.piece.row in [0, 7]:
+                    raise NotImplementedError
+                    # TODO: Pop up for selecting piece
+                    board.promote_pawn(selected_piece.piece, new_piece)
+                
+                self.query_one(InfoBox).update_moves(board.moves_made)
+            
             self.update_board()
             selected_piece.reset()
+
+            if board.checkmate():
+                self.query_one("#gamestate").update("Checkmate")
+
+            if board.stalemate():
+                self.query_one("#gamestate").update("Stalemate")
+
+            if board.remis():
+                self.query_one("#gamestate").update("Remis")

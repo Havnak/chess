@@ -5,7 +5,7 @@ Classes for all chess pieces and board
 import copy
 import numpy as np
 
-def row_col_to_chess_notation(row, col):
+def row_col_to_chess_notation(row, col) -> str:
     num_to_alph = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
     return num_to_alph[col] + str(row + 1)
 
@@ -95,13 +95,25 @@ def check(board) -> tuple:
     return None, False
 
 def check_after_move(piece, row, col, board):
-        board_copy = copy.deepcopy(board)
-        piece_copy = board_copy[piece.row][piece.col]
-        board_copy.move(piece_copy, row, col)
-        board_copy.turn = piece.color
-        _, is_checked = check(board_copy)
-        if is_checked: return True
-        return False
+    board_copy = copy.deepcopy(board)
+    board_copy.iscopy = True
+    piece_copy = board_copy[piece.row][piece.col]
+    board_copy.move(piece_copy, row, col)
+    board_copy.turn = piece.color
+    _, is_checked = check(board_copy)
+    if is_checked: return True
+    return False
+
+def checkmate_after_move(piece, row, col, board):
+    board_copy = copy.deepcopy(board)
+    board_copy.iscopy = True
+    piece_copy = board_copy[piece.row][piece.col]
+    board_copy.move(piece_copy, row, col)
+    board_copy.turn = piece.color
+    checkmate = board_copy.checkmate()
+
+    if checkmate: return True
+    return False
 
 class Piece:
     """
@@ -381,7 +393,8 @@ class Board:
         self.chess_board = self.setup_board()
         self.turn = "W"
         self.en_passant_able = ()
-        
+        self.moves_made = []
+        self.iscopy = False
 
     def __str__(self):
         board_str = "\n"
@@ -453,6 +466,46 @@ class Board:
                 legal_moves += piece.get_legal_moves(self)
         return legal_moves
 
+    def promote_pawn(self, pawn, new_piece): # TODO
+        board[pawn.row][pawn.col] = new_piece
+        self.pieces.remove(pawn)
+        self.pieces.append(new_piece)
+
+    def checkmate(self):
+        if len(self.get_all_legal_moves()) == 0:
+            _, in_check = check(self)
+            if in_check:
+                return True
+        return False
+
+    def stalemate(self):
+        if len(self.get_all_legal_moves()) == 0:
+            _, in_check = check(self)
+            if not in_check:
+                return True
+        return False
+    
+    def remis(self):
+        # TODO
+        return False
+
+    def update_moves_made(self, piece, row, col):
+        capture = ""
+        if self[row][col]:
+            capture = "x"
+
+        previous_position = ""
+        legal_moves = self.get_all_legal_moves()
+        if sum([1 if (row, col) == move else 0 for move in legal_moves]) > 1:
+            previous_position = row_col_to_chess_notation(*piece.pos)
+
+        check = ""
+        if check_after_move(piece, row, col, self):
+            check = "+"
+            if checkmate_after_move(piece, row, col, self):
+                check = "#"
+
+        self.moves_made.append(previous_position + capture + row_col_to_chess_notation(row, col) + check)
 
     def move(self, piece: Piece, row, col):
         """
@@ -476,28 +529,20 @@ class Board:
                 and row == piece.row + 2*direction
                 ):
                     self.en_passant_able = (row, col)
+            
+        # --- promotion needs interaction, therefore it's handled in the UI ---
 
+        if not self.iscopy:
+            self.update_moves_made(piece, row, col)
         self.chess_board[piece.row][piece.col] = None
         self.capture(row, col) # Before moving, capture piece if capture is going to happen
         piece.update_position(row, col)
         self.chess_board[row][col] = piece
+
         
         # --- turn finished ---
         self.turn = {"W": "B", "B": "W"}[self.turn]     
-                
-    def checkmate(self):
-        if len(self.get_all_legal_moves()) == 0:
-            _, in_check = check(self)
-            if in_check:
-                return True
-        return False
 
-    def stalemate(self):
-        if len(self.get_all_legal_moves()) == 0:
-            _, in_check = check(self)
-            if not in_check:
-                return True
-        return False
 
     def detect_check(self):
         return check(self)
@@ -508,3 +553,10 @@ class Board:
         for piece in self.pieces:
             if piece.pos == (row, col):
                 self.pieces.remove(piece)
+
+if __name__ == "__main__":
+    b = Board()
+    b.move(b[1][1], 2, 1)
+    b.move(b[6][1], 4, 1)
+    print(b)
+    print(b.moves_made)
