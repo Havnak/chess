@@ -84,7 +84,7 @@ class InfoBox(Container):
     def add_both_moves(self, move: list, number):
         self.query_one("#single").remove()
         string = f"{number}. {move[0]:>6} {move[1]:>6}" 
-        move = Label(string)
+        move = Label(string, id="double")
         self.query_one("#moves").mount(move)
 
     def update_moves(self, moves: list):
@@ -94,7 +94,7 @@ class InfoBox(Container):
             self.add_single_move(moves[-1], len(moves)//2+1)
 
     def reset(self):
-        labels = self.query(Label)
+        labels = self.query("ScrollableContainer > Label")
         if labels:
             for label in labels:
                 label.remove()
