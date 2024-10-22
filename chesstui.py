@@ -213,7 +213,6 @@ class ChessApp(App):
 
         # --- Moving selected piece ---
         else:
-            selected_piece.square.standard_style()
 
             if (square_pressed.row,
                 square_pressed.col,
