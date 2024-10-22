@@ -196,7 +196,6 @@ class Piece:
                     if not check_after_move(self, row + self.row, col + self.col, board, self.color):
                         self.legal_moves.append((row + self.row, col + self.col))
 
-
 class Pawn(Piece):
     def __init__(self, color, **kwargs):
         super().__init__(color, **kwargs)
@@ -273,6 +272,35 @@ class King(Piece):
             (0, 1),
             (0, -1),
         ]
+
+    def casteling_moves(self, board):
+        row, col = self.row, self.col
+        if self.piece_type == "k":
+            if self.color == "W":
+                if "K" in board.casteling:
+                    if not piece_between(*self.pos, self.row, 7, board):
+                        if not (check_after_move(self, row, col + 1, board, self.color) or check_after_move(self, row, col + 2, board, self.color)):
+                            self.legal_moves.append((row, col+2))
+
+                if "Q" in board.casteling:
+                    if not piece_between(*self.pos, self.row, 0, board):
+                        if not (check_after_move(self, row, col - 1, board, self.color) or check_after_move(self, row, col - 2, board, self.color)):
+                            self.legal_moves.append((row, col-2))
+                    
+            else:
+                if "k" in board.casteling:
+                    if not piece_between(*self.pos, self.row, 7, board):
+                        if not (check_after_move(self, row, col + 1, board, self.color) or check_after_move(self, row, col + 2, board, self.color)):
+                            self.legal_moves.append((row, col+2))
+
+                if "q" in board.casteling:
+                    if not piece_between(*self.pos, self.row, 0, board):
+                        if not (check_after_move(self, row, col - 1, board, self.color) or check_after_move(self, row, col - 2, board, self.color)):
+                            self.legal_moves.append((row, col-2))
+    
+    def update_legal_moves(self, board):
+        super().update_legal_moves(board)
+        self.casteling_moves(board)
 
 
 class Knight(Piece):
@@ -390,6 +418,7 @@ class Board:
     """
 
     def __init__(self):
+        self.casteling = "KQkq"
         self.kings = {}
         self.pieces = []
         self.chess_board = self.setup_board()
@@ -397,6 +426,7 @@ class Board:
         self.en_passant_able = ()
         self.moves_made = []
         self.iscopy = False
+        
 
     def __str__(self):
         board_str = "\n"
@@ -460,6 +490,7 @@ class Board:
     def reset(self):
         self.chess_board = self.setup_board()
         self.turn = "W"
+        self.casteling = "KQkq"
 
     def get_all_legal_moves(self):
         legal_moves = []
@@ -536,12 +567,63 @@ class Board:
 
         if not self.iscopy:
             self.update_moves_made(piece, row, col)
+
+        # --- casteling ---
+        if piece.piece_type == "k":
+            if piece.color == "W":
+                if piece.pos == (0, 4):
+                    if "K" in self.casteling and (row, col) == (0, 6):
+                        self.move(self[0][7], 0, 5)
+                        self.turn = {"W": "B", "B": "W"}[self.turn] # We are making 2 moves, and therefore we need to toggle turn again
+                        if not self.iscopy: 
+                            del self.moves_made[-2]
+                            self.moves_made[-1] = "O-O"
+
+                    if "Q" in self.casteling and (row, col) == (0, 2):
+                        self.move(self[0][0], 0, 3)
+                        self.turn = {"W": "B", "B": "W"}[self.turn]
+                        if not self.iscopy: 
+                            del self.moves_made[-2]
+                            self.moves_made[-1] = "O-O-O"
+                    
+                self.casteling = "".join(["-" if castle.isupper() else castle for castle in self.casteling])
+
+            else:
+                if piece.pos == (7, 4):
+                    if "k" in self.casteling and (row, col) == (7, 6):
+                        self.move(self[7][7], 7, 5)
+                        self.turn = {"W": "B", "B": "W"}[self.turn]
+                        if not self.iscopy: 
+                            del self.moves_made[-2]
+                            self.moves_made[-1] = "O-O"
+
+                    if "q" in self.casteling and (row, col) == (7, 2):
+                        self.move(self[7][0], 7, 3)
+                        self.turn = {"W": "B", "B": "W"}[self.turn]
+                        if not self.iscopy: 
+                            del self.moves_made[-2]
+                            self.moves_made[-1] = "O-O-O"
+
+                self.casteling = "".join(["-" if castle.islower() else castle for castle in self.casteling])
+
+
+        if piece.piece_type == "r":
+            if piece.color == "W":
+                if piece.col == 0:
+                    self.casteling = "".join(["-" if castle == "Q" else castle for castle in self.casteling])
+                if piece.col == 7:
+                    self.casteling = "".join(["-" if castle == "K" else castle for castle in self.casteling])
+
+            else:
+                if piece.col == 0:
+                    self.casteling = "".join(["-" if castle == "q" else castle for castle in self.casteling])
+                if piece.col == 7:
+                    self.casteling = "".join(["-" if castle == "k" else castle for castle in self.casteling])
+
         self.chess_board[piece.row][piece.col] = None
         self.capture(row, col) # Before moving, capture piece if capture is going to happen
         piece.update_position(row, col)
         self.chess_board[row][col] = piece
-
-        
         # --- turn finished ---
         self.turn = {"W": "B", "B": "W"}[self.turn]     
 
@@ -558,7 +640,8 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
-    b.move(b[7][4], 6, 4)
-    b.move(b[0][3], 1, 4)
+    b.capture(0, 5)
+    b.capture(0, 6)
+    b[0][4].update_legal_moves(b)
+    b.move(b[0][4], 0, 6)
     print(b)
-    print(b.moves_made)
