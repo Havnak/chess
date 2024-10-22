@@ -161,17 +161,17 @@ class Piece:
             if piece_between(*self.pos, *king.pos, board): return False, (0, 0) # Cant be pinned if there are pieces between you and the king
             
             for piece in board.pieces:
-                if piece.piece_type in ["b", "q"]:
+                if piece.piece_type in ["b", "q"] and piece.color != self.color:
                     if on_diagonal(*piece.pos, *king.pos):
                         pieces_between = piece_between(*piece.pos, *king.pos, board)
-                        if len(pieces_between)==1:
+                        if len(pieces_between)==1:  # Only self is between attacking piece and king
                             if pieces_between[0] is self:
                                 return True, get_direction(*self.pos, *piece.pos)
 
-                if piece.piece_type in ["r", "q"]:
+                if piece.piece_type in ["r", "q"] and piece.color != self.color:
                     if on_straight(*piece.pos, *king.pos):
                         pieces_between = piece_between(*piece.pos, *king.pos, board)
-                        if len(pieces_between)==1:
+                        if len(pieces_between)==1: # Only self is between attacking piece and king
                             if pieces_between[0] is self:
                                 return True, get_direction(*self.pos, *piece.pos)
         return False, (0, 0) 
