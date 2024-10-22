@@ -63,6 +63,38 @@ class ChessBoardVisual(Container):
                         row=row, col=col, piece_art=piece_art, id=f"r{row}c{col}", classes="square"
                     )
 
+class ChoosePiece(Container):
+
+    def __init__(self, color, promotion=True):
+        super().__init__()
+        self.promotion = promotion
+        self.color = color
+
+        self.pieces = {
+                "W": ["♔", "♕", "♖", "♗", "♘", "♙"],
+                "B": ["♚", "♛", "♜", "♝", "♞", "♟"]
+                }
+        
+        self.piece_to_str = {
+                        "♔": "K",
+                        "♕": "Q",
+                        "♖": "R",
+                        "♗": "B",
+                        "♘": "N",
+                        "♙": "P",
+                        "♚": "k",
+                        "♛": "q",
+                        "♜": "r",
+                        "♝": "b",
+                        "♞": "n",
+                        "♟": "p"
+                        }
+
+    def compose(self) -> ComposeResult:
+        with Vertical():
+            for piece in self.pieces[self.color][1:-1] if self.promotion else self.pieces[self.color]:
+                yield Button(piece, id=self.piece_to_str[piece], classes="PickerButton")
+
 class InfoBox(Container):
     """ Widget to display information such as moves, game result, engine analysis and such """
 
@@ -73,7 +105,7 @@ class InfoBox(Container):
     def compose(self) -> ComposeResult:
         with Vertical():
             yield Label("", id="gamestate")
-            with Grid():
+            with Horizontal(id="sidebar"):
                 yield ScrollableContainer(id="moves")
                 # yield EvaluationBar(id="evalFish")
             with Container(id="fen_box"):
@@ -86,12 +118,14 @@ class InfoBox(Container):
         string = f" {number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
         move = Label(string, id="single")
         self.query_one("#moves").mount(move)
+        move.scroll_visible()
 
     def add_both_moves(self, move: list, number):
         self.query_one("#single").remove()
         string = f" {number}. {move[0]:>6} {move[1]:>6}" 
         move = Label(string)
         self.query_one("#moves").mount(move)
+        move.scroll_visible()
 
     def update_moves(self, moves: list):
         if len(moves) % 2 == 0:
@@ -185,6 +219,14 @@ class ChessApp(App):
     def copy_fen(self):
         pyperclip.copy(board.fen())
 
+    @on(Button.Pressed, ".PickerButton")
+    def handle_select_piece(self, event: Button.Pressed):
+        new_piece = event.button.id
+        board.promote_pawn(new_piece)
+        board.game_end = False
+        self.query_one(ChoosePiece).remove()
+        self.update_board()
+
     def action_reset_board(self):
         self.restart()
 
@@ -233,10 +275,9 @@ class ChessApp(App):
 
                     # --- promotion ---
                     if isinstance(selected_piece.piece, Pawn) and selected_piece.piece.row in [0, 7]:
-                        raise NotImplementedError
-                        # TODO: Pop up for selecting piece
-                        board.promote_pawn(selected_piece.piece, new_piece)
-                    
+                        piece_picker = ChoosePiece(selected_piece.piece.color)
+                        self.query_one("#sidebar").mount(piece_picker)
+        
                     self.query_one(InfoBox).update_moves(board.moves_made)
             
             self.query_one("#fen").update(f"{board.fen()}")

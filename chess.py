@@ -5,6 +5,7 @@ Classes for all chess pieces and board
 import copy
 import numpy as np
 
+
 def row_col_to_chess_notation(row, col) -> str:
     num_to_alph = {0: "a", 1: "b", 2: "c", 3: "d", 4: "e", 5: "f", 6: "g", 7: "h"}
     return num_to_alph[col] + str(row + 1)
@@ -13,22 +14,27 @@ def row_col_to_chess_notation(row, col) -> str:
 def chess_notation_to_row_col(chess_notation: str):
     return (ord(chess_notation[0].lower()) - 97, chess_notation[1] - 1)
 
-def on_straight(row1,col1, row2, col2) -> bool:
-    return (row1 == row2 or col1 == col2)
+
+def on_straight(row1, col1, row2, col2) -> bool:
+    return row1 == row2 or col1 == col2
+
 
 def on_diagonal(row1, col1, row2, col2) -> bool:
     """ """
     return (row1 - col1 == row2 - col2) or (row1 + col1 == row2 + col2)
 
+
 def on_line(row1, col1, row2, col2) -> bool:
     return on_straight(row1, col1, row2, col2) or on_diagonal(row1, col1, row2, col2)
+
 
 def distance(row1, col1, row2, col2) -> float:
     """
     returns:
         <float> of euclidian distance between (row1, col1) and (row2, col2)
     """
-    return np.sqrt((row2-row1)**2 + (col2-col1)**2)
+    return np.sqrt((row2 - row1) ** 2 + (col2 - col1) ** 2)
+
 
 def get_direction(row1, col1, row2, col2) -> tuple:
     """
@@ -36,28 +42,37 @@ def get_direction(row1, col1, row2, col2) -> tuple:
         <tuple> of direction vector from pos(row1, col1) to pos(row2, col2)
     """
     if 0 not in [row2 - row1, col2 - col1]:
-        return round((row2-row1)/abs(row2-row1)), round((col2-col1)/abs(col2-col1))
-    if (row2-row1) != 0:
-        return round((row2-row1)/abs(row2-row1)), round(col2-col1)
-    if (col2-col1) != 0:
-        return round(row2-row1), round((col2-col1)/abs(col2-col1))
+        return round((row2 - row1) / abs(row2 - row1)), round(
+            (col2 - col1) / abs(col2 - col1)
+        )
+    if (row2 - row1) != 0:
+        return round((row2 - row1) / abs(row2 - row1)), round(col2 - col1)
+    if (col2 - col1) != 0:
+        return round(row2 - row1), round((col2 - col1) / abs(col2 - col1))
+
 
 def piece_between(row1, col1, row2, col2, board) -> list:
     """
     Return:
-        list of pieces between pos(row1, col1) and pos(row2, col2) 
+        list of pieces between pos(row1, col1) and pos(row2, col2)
         or [] if none
     """
     pieces_between = []
     d = distance(row1, col1, row2, col2)
     for row in board:
         for piece in row:
-            if not piece: continue
-            if piece.pos in [(row1, col1), (row2, col2)]: continue
-            if (on_line(row1, col1, row2, col2)):
-                if np.isclose(distance(*piece.pos, row1, col1) + distance(*piece.pos, row2, col2), d): # If B is between A and C, distance(A, C) is the same as distance(A, B) + distance(B, C)
+            if not piece:
+                continue
+            if piece.pos in [(row1, col1), (row2, col2)]:
+                continue
+            if on_line(row1, col1, row2, col2):
+                if np.isclose(
+                    distance(*piece.pos, row1, col1) + distance(*piece.pos, row2, col2),
+                    d,
+                ):  # If B is between A and C, distance(A, C) is the same as distance(A, B) + distance(B, C)
                     pieces_between.append(piece)
     return pieces_between
+
 
 def check(board) -> tuple:
     """
@@ -81,18 +96,23 @@ def check(board) -> tuple:
 
             if piece.piece_type == "p":
                 for row, col in piece.attacking_moves:
-                    if all([
-                            king.row - row< 8,
-                            king.row - row>= 0,
+                    if all(
+                        [
+                            king.row - row < 8,
+                            king.row - row >= 0,
                             king.col - col < 8,
                             king.col - col >= 0,
-                            ]
+                        ]
                     ):
                         if board[king.row - row][king.col - col]:
-                            if board[king.row - row][king.col - col].color != king.color:
+                            if (
+                                board[king.row - row][king.col - col].color
+                                != king.color
+                            ):
                                 return king, True
 
     return None, False
+
 
 def check_after_move(piece, row, col, board, color):
     board_copy = copy.deepcopy(board)
@@ -101,10 +121,11 @@ def check_after_move(piece, row, col, board, color):
     board_copy.move(piece_copy, row, col)
     board_copy.turn = color
     king, is_checked = check(board_copy)
-    if not is_checked: 
+    if not is_checked:
         return False
     if king.color == color:
         return True
+
 
 def checkmate_after_move(piece, row, col, board, color):
     board_copy = copy.deepcopy(board)
@@ -114,8 +135,10 @@ def checkmate_after_move(piece, row, col, board, color):
     board_copy.turn = color
     checkmate = board_copy.checkmate()
 
-    if checkmate: return True
+    if checkmate:
+        return True
     return False
+
 
 class Piece:
     """
@@ -149,39 +172,49 @@ class Piece:
         self.col = col
         self.pos = row, col
 
-
     def get_legal_moves(self, board):
         self.update_legal_moves(board)
         return self.legal_moves
 
     def ispinned(self, board):
         king = board.kings[self.color]
-        if on_line(*self.pos, *king.pos): # Only check pinning if you are on line with the king  
+        if on_line(
+            *self.pos, *king.pos
+        ):  # Only check pinning if you are on line with the king
 
-            if piece_between(*self.pos, *king.pos, board): return False, (0, 0) # Cant be pinned if there are pieces between you and the king
-            
+            if piece_between(*self.pos, *king.pos, board):
+                return False, (
+                    0,
+                    0,
+                )  # Cant be pinned if there are pieces between you and the king
+
             for piece in board.pieces:
                 if piece.piece_type in ["b", "q"] and piece.color != self.color:
                     if on_diagonal(*piece.pos, *king.pos):
                         pieces_between = piece_between(*piece.pos, *king.pos, board)
-                        if len(pieces_between)==1:  # Only self is between attacking piece and king
+                        if (
+                            len(pieces_between) == 1
+                        ):  # Only self is between attacking piece and king
                             if pieces_between[0] is self:
                                 return True, get_direction(*self.pos, *piece.pos)
 
                 if piece.piece_type in ["r", "q"] and piece.color != self.color:
                     if on_straight(*piece.pos, *king.pos):
                         pieces_between = piece_between(*piece.pos, *king.pos, board)
-                        if len(pieces_between)==1: # Only self is between attacking piece and king
+                        if (
+                            len(pieces_between) == 1
+                        ):  # Only self is between attacking piece and king
                             if pieces_between[0] is self:
                                 return True, get_direction(*self.pos, *piece.pos)
-        return False, (0, 0) 
+        return False, (0, 0)
 
     def update_legal_moves(self, board):
         self.legal_moves = []
         moves = copy.copy(self.moves)
 
-        if board.game_end: return
-    
+        if board.game_end:
+            return
+
         for row, col in moves:
             if all(
                 [
@@ -195,8 +228,11 @@ class Piece:
                     not board[row + self.row][col + self.col]
                     or board[row + self.row][col + self.col].color != self.color
                 ):
-                    if not check_after_move(self, row + self.row, col + self.col, board, self.color):
+                    if not check_after_move(
+                        self, row + self.row, col + self.col, board, self.color
+                    ):
                         self.legal_moves.append((row + self.row, col + self.col))
+
 
 class Pawn(Piece):
     def __init__(self, color, **kwargs):
@@ -215,49 +251,77 @@ class Pawn(Piece):
         self.legal_moves = []
         pinned, pin_direction = self.ispinned(board)
 
-        if board.game_end: return
+        if board.game_end:
+            return
 
         # --- moves ---
 
         row, col = self.moves
         if not pinned or pin_direction == (row, col):
             if not (board[self.row + row][self.col + col]):
-                if not check_after_move(self, self.row + row, self.col + col, board, self.color):
+                if not check_after_move(
+                    self, self.row + row, self.col + col, board, self.color
+                ):
                     self.legal_moves.append((self.row + row, self.col + col))
-                    if ((self.row, self.color) in [(1, "W"), (6, "B")]
-                        and not board[self.row + 2*row][self.col + 2*col]
-                    ):
-                        if not check_after_move(self, self.row + 2*row, self.col + 2*col, board, self.color):
-                            self.legal_moves.append((self.row + 2*row, self.col + 2*col))
+                    if (self.row, self.color) in [(1, "W"), (6, "B")] and not board[
+                        self.row + 2 * row
+                    ][self.col + 2 * col]:
+                        if not check_after_move(
+                            self,
+                            self.row + 2 * row,
+                            self.col + 2 * col,
+                            board,
+                            self.color,
+                        ):
+                            self.legal_moves.append(
+                                (self.row + 2 * row, self.col + 2 * col)
+                            )
 
         # --- attacks ---
         for row, col in self.attacking_moves:
             if not pinned or (row, col) == pin_direction:
-                if all([
+                if all(
+                    [
                         row + self.row < 8,
                         row + self.row >= 0,
                         col + self.col < 8,
                         col + self.col >= 0,
-                        ]
+                    ]
                 ):
                     if isinstance(board[self.row + row][self.col + col], Piece):
                         if board[self.row + row][self.col + col].color != self.color:
-                            if not check_after_move(self, self.row + row, self.col + col, board, self.color):
-                                self.legal_moves.append((self.row + row, self.col + col))
+                            if not check_after_move(
+                                self, self.row + row, self.col + col, board, self.color
+                            ):
+                                self.legal_moves.append(
+                                    (self.row + row, self.col + col)
+                                )
 
         # --- en passant ---
-        if (self.row, self.color) in [(3, "B"),(4, "W")]:
+        if (self.row, self.color) in [(3, "B"), (4, "W")]:
             for col in [1, -1]:
-                if all([
+                if all(
+                    [
                         row + self.row < 8,
                         row + self.row >= 0,
                         col + self.col < 8,
                         col + self.col >= 0,
-                        ]
+                    ]
                 ):
-                    if (self.row + 1 - 2*(self.color == "B"), self.col + col) == board.en_passant_able:
-                        if not check_after_move(self, self.row + 1 - 2*(self.color == "B"), self.col + col, board, self.color):
-                            self.legal_moves.append((self.row + 1 - 2*(self.color == "B"), self.col + col))
+                    if (
+                        self.row + 1 - 2 * (self.color == "B"),
+                        self.col + col,
+                    ) == board.en_passant_able:
+                        if not check_after_move(
+                            self,
+                            self.row + 1 - 2 * (self.color == "B"),
+                            self.col + col,
+                            board,
+                            self.color,
+                        ):
+                            self.legal_moves.append(
+                                (self.row + 1 - 2 * (self.color == "B"), self.col + col)
+                            )
 
 
 class King(Piece):
@@ -286,28 +350,41 @@ class King(Piece):
             if self.color == "W":
                 if "K" in board.casteling:
                     if not piece_between(*self.pos, self.row, 7, board):
-                        if not (check_after_move(self, row, col + 1, board, self.color) or check_after_move(self, row, col + 2, board, self.color)):
-                            self.legal_moves.append((row, col+2))
+                        if not (
+                            check_after_move(self, row, col + 1, board, self.color)
+                            or check_after_move(self, row, col + 2, board, self.color)
+                        ):
+                            self.legal_moves.append((row, col + 2))
 
                 if "Q" in board.casteling:
                     if not piece_between(*self.pos, self.row, 0, board):
-                        if not (check_after_move(self, row, col - 1, board, self.color) or check_after_move(self, row, col - 2, board, self.color)):
-                            self.legal_moves.append((row, col-2))
-                    
+                        if not (
+                            check_after_move(self, row, col - 1, board, self.color)
+                            or check_after_move(self, row, col - 2, board, self.color)
+                        ):
+                            self.legal_moves.append((row, col - 2))
+
             else:
                 if "k" in board.casteling:
                     if not piece_between(*self.pos, self.row, 7, board):
-                        if not (check_after_move(self, row, col + 1, board, self.color) or check_after_move(self, row, col + 2, board, self.color)):
-                            self.legal_moves.append((row, col+2))
+                        if not (
+                            check_after_move(self, row, col + 1, board, self.color)
+                            or check_after_move(self, row, col + 2, board, self.color)
+                        ):
+                            self.legal_moves.append((row, col + 2))
 
                 if "q" in board.casteling:
                     if not piece_between(*self.pos, self.row, 0, board):
-                        if not (check_after_move(self, row, col - 1, board, self.color) or check_after_move(self, row, col - 2, board, self.color)):
-                            self.legal_moves.append((row, col-2))
-    
+                        if not (
+                            check_after_move(self, row, col - 1, board, self.color)
+                            or check_after_move(self, row, col - 2, board, self.color)
+                        ):
+                            self.legal_moves.append((row, col - 2))
+
     def update_legal_moves(self, board):
         super().update_legal_moves(board)
-        if board.game_end: return
+        if board.game_end:
+            return
         self.casteling_moves(board)
 
 
@@ -335,7 +412,8 @@ class Slider(Piece):
 
     def update_legal_moves(self, board):
         self.legal_moves = []
-        if board.game_end: return
+        if board.game_end:
+            return
 
         # --- logic for pinning ---
         moves = copy.copy(self.moves)
@@ -439,7 +517,6 @@ class Board:
         self.fullmoves = 1
         self.game_end = False
         self.positions = []
-        
 
     def __str__(self):
         board_str = "\n"
@@ -463,21 +540,29 @@ class Board:
             empty_squares = 0
             for square in row:
                 if square:
-                    if empty_squares > 0: fen += str(empty_squares)
-                    fen += square.piece_type.upper() if square.color == "W" else square.piece_type
+                    if empty_squares > 0:
+                        fen += str(empty_squares)
+                    fen += (
+                        square.piece_type.upper()
+                        if square.color == "W"
+                        else square.piece_type
+                    )
                     empty_squares = 0
                 else:
                     empty_squares += 1
-            if empty_squares > 0: fen += str(empty_squares)
+            if empty_squares > 0:
+                fen += str(empty_squares)
             fen += "/"
-        fen = fen[:-1] + " " # remove last "/"
+        fen = fen[:-1] + " "  # remove last "/"
         casteling = "".join(self.casteling.split("-"))
-        fen += self.turn.lower() + " " + (casteling if casteling else "-")+ " "
+        fen += self.turn.lower() + " " + (casteling if casteling else "-") + " "
 
         en_passant_target_square = self.en_passant_able
-        if en_passant_target_square: fen += row_col_to_chess_notation(*en_passant_target_square) + " "
-        else: fen += "- "
-        
+        if en_passant_target_square:
+            fen += row_col_to_chess_notation(*en_passant_target_square) + " "
+        else:
+            fen += "- "
+
         fen += str(self.halfmoves) + " " + str(self.fullmoves)
 
         return fen
@@ -535,10 +620,39 @@ class Board:
                 legal_moves += piece.get_legal_moves(self)
         return legal_moves
 
-    def promote_pawn(self, pawn, new_piece): # TODO
-        board[pawn.row][pawn.col] = new_piece
+    def promote_pawn(self, new_piece):
+        for piece in self.pieces:
+            if isinstance(piece, Pawn) and piece.row in [0, 7]:
+                pawn = piece  # Pawn that is promoting
+        fen_to_class = {
+            "r": Rook("B", row=pawn.row, col=pawn.col),  # Black Rook
+            "n": Knight("B", row=pawn.row, col=pawn.col),  # Black Knight
+            "b": Bishop("B", row=pawn.row, col=pawn.col),  # Black Bishop
+            "q": Queen("B", row=pawn.row, col=pawn.col),  # Black Queen
+            "k": King("B", row=pawn.row, col=pawn.col),  # Black King
+            "p": Pawn("B", row=pawn.row, col=pawn.col),  # Black Pawn
+            "R": Rook("W", row=pawn.row, col=pawn.col),  # White Rook
+            "N": Knight("W", row=pawn.row, col=pawn.col),  # White Knight
+            "B": Bishop("W", row=pawn.row, col=pawn.col),  # White Bishop
+            "Q": Queen("W", row=pawn.row, col=pawn.col),  # White Queen
+            "K": King("W", row=pawn.row, col=pawn.col),  # White King
+            "P": Pawn("W", row=pawn.row, col=pawn.col),  # White Pawn
+        }
+
+        new_piece = fen_to_class[new_piece]
+        self[pawn.row][pawn.col] = new_piece
         self.pieces.remove(pawn)
         self.pieces.append(new_piece)
+        self.moves_made[-1] = (
+            str(
+                self.moves_made[-1][:-1]
+                + "="
+                + new_piece.piece_type.upper()
+                + self.moves_made[-1][-1]
+            )
+            if (self.moves_made[-1][-1] in ["+", "#"])
+            else str(self.moves_made[-1] + "=" + new_piece.piece_type.upper())
+        )
 
     def checkmate(self):
         if len(self.get_all_legal_moves()) == 0:
@@ -557,18 +671,21 @@ class Board:
         return False
 
     def fifty_moves(self):
-        if self.halfmoves == 100: 
+        if self.halfmoves == 100:
             self.game_end = True
             return True
         return False
 
     def repetition(self):
         current_fen = self.fen().split(" ")[0]
-        if sum([1 if current_fen in position else 0 for position in self.positions]) > 2:
+        if (
+            sum([1 if current_fen in position else 0 for position in self.positions])
+            > 2
+        ):
             self.game_end = True
             return True
         return False
-    
+
     def remis(self):
         # TODO
         return False
@@ -586,10 +703,14 @@ class Board:
         check = ""
         if check_after_move(piece, row, col, self, {"W": "B", "B": "W"}[piece.color]):
             check = "+"
-            if checkmate_after_move(piece, row, col, self, {"W": "B", "B": "W"}[piece.color]):
+            if checkmate_after_move(
+                piece, row, col, self, {"W": "B", "B": "W"}[piece.color]
+            ):
                 check = "#"
 
-        self.moves_made.append(previous_position + capture + row_col_to_chess_notation(row, col) + check)
+        self.moves_made.append(
+            previous_position + capture + row_col_to_chess_notation(row, col) + check
+        )
 
     def move(self, piece: Piece, row, col):
         """
@@ -603,17 +724,18 @@ class Board:
         direction = 1 if piece.color == "W" else -1
 
         # --- en passant ---
-        if (isinstance(piece, Pawn)):
+        if isinstance(piece, Pawn):
             if (row, col) == self.en_passant_able:
                 self.capture(row - direction, col)
 
         self.en_passant_able = ()
         if isinstance(piece, Pawn):
-            if ((piece.row, piece.color) in [(1,"W"), (6, "B")] # If pawn is on start row
-                and row == piece.row + 2*direction
-                ):
-                    self.en_passant_able = (row-direction, col)
-            
+            if (piece.row, piece.color) in [
+                (1, "W"),
+                (6, "B"),
+            ] and row == piece.row + 2 * direction:  # If pawn is on start row
+                self.en_passant_able = (row - direction, col)
+
         # --- promotion needs interaction, therefore it's handled in the UI ---
 
         if not self.iscopy:
@@ -625,51 +747,64 @@ class Board:
                 if piece.pos == (0, 4):
                     if "K" in self.casteling and (row, col) == (0, 6):
                         self.move(self[0][7], 0, 5)
-                        self.turn = {"W": "B", "B": "W"}[self.turn] # We are making 2 moves, and therefore we need to toggle turn again
-                        if not self.iscopy: 
+                        self.turn = {"W": "B", "B": "W"}[
+                            self.turn
+                        ]  # We are making 2 moves, and therefore we need to toggle turn again
+                        if not self.iscopy:
                             del self.moves_made[-2]
                             self.moves_made[-1] = "O-O"
 
                     if "Q" in self.casteling and (row, col) == (0, 2):
                         self.move(self[0][0], 0, 3)
                         self.turn = {"W": "B", "B": "W"}[self.turn]
-                        if not self.iscopy: 
+                        if not self.iscopy:
                             del self.moves_made[-2]
                             self.moves_made[-1] = "O-O-O"
-                    
-                self.casteling = "".join(["-" if castle.isupper() else castle for castle in self.casteling])
+
+                self.casteling = "".join(
+                    ["-" if castle.isupper() else castle for castle in self.casteling]
+                )
 
             else:
                 if piece.pos == (7, 4):
                     if "k" in self.casteling and (row, col) == (7, 6):
                         self.move(self[7][7], 7, 5)
                         self.turn = {"W": "B", "B": "W"}[self.turn]
-                        if not self.iscopy: 
+                        if not self.iscopy:
                             del self.moves_made[-2]
                             self.moves_made[-1] = "O-O"
 
                     if "q" in self.casteling and (row, col) == (7, 2):
                         self.move(self[7][0], 7, 3)
                         self.turn = {"W": "B", "B": "W"}[self.turn]
-                        if not self.iscopy: 
+                        if not self.iscopy:
                             del self.moves_made[-2]
                             self.moves_made[-1] = "O-O-O"
 
-                self.casteling = "".join(["-" if castle.islower() else castle for castle in self.casteling])
-
+                self.casteling = "".join(
+                    ["-" if castle.islower() else castle for castle in self.casteling]
+                )
 
         if piece.piece_type == "r":
             if piece.color == "W":
                 if piece.col == 0:
-                    self.casteling = "".join(["-" if castle == "Q" else castle for castle in self.casteling])
+                    self.casteling = "".join(
+                        ["-" if castle == "Q" else castle for castle in self.casteling]
+                    )
                 if piece.col == 7:
-                    self.casteling = "".join(["-" if castle == "K" else castle for castle in self.casteling])
+                    self.casteling = "".join(
+                        ["-" if castle == "K" else castle for castle in self.casteling]
+                    )
 
             else:
                 if piece.col == 0:
-                    self.casteling = "".join(["-" if castle == "q" else castle for castle in self.casteling])
+                    self.casteling = "".join(
+                        ["-" if castle == "q" else castle for castle in self.casteling]
+                    )
                 if piece.col == 7:
-                    self.casteling = "".join(["-" if castle == "k" else castle for castle in self.casteling])
+                    self.casteling = "".join(
+                        ["-" if castle == "k" else castle for castle in self.casteling]
+                    )
 
         self[piece.row][piece.col] = None
         self.halfmoves += 1
@@ -677,39 +812,32 @@ class Board:
             self.halfmoves = 0
             self.positions = []
 
-        self.capture(row, col) # Before moving, capture piece if capture is going to happen
+        self.capture(
+            row, col
+        )  # Before moving, capture piece if capture is going to happen
         piece.update_position(row, col)
         self.chess_board[row][col] = piece
         # --- turn finished ---
-        if self.turn == "B": self.fullmoves += 1
+        if self.turn == "B":
+            self.fullmoves += 1
         self.positions.append(self.fen().split(" ")[0])
-        self.turn = {"W": "B", "B": "W"}[self.turn]     
-    
+        self.turn = {"W": "B", "B": "W"}[self.turn]
 
     def detect_check(self):
         return check(self)
 
     def capture(self, row, col):
-        """ ** Must be called before updating attacking pieces position ** """
+        """** Must be called before updating attacking pieces position **"""
         self.chess_board[row][col] = None
         for piece in self.pieces:
             if piece.pos == (row, col):
                 self.pieces.remove(piece)
 
+
 if __name__ == "__main__":
     b = Board()
-    b.move(b[0][1], 2, 2)
-    b.move(b[7][1], 5, 2)
-    b.move(b[2][2], 0, 1)
-    b.move(b[5][2], 7, 1)
-    b.move(b[0][1], 2, 2)
-    b.move(b[7][1], 5, 2)
-    b.move(b[2][2], 0, 1)
-    b.move(b[5][2], 7, 1)
-    b.move(b[0][1], 2, 2)
-    b.move(b[7][1], 5, 2)
-    b.move(b[2][2], 0, 1)
-    b.move(b[5][2], 7, 1)
+    b.move(b[1][1], 7, 1)
+    b.promote_pawn("Q")
     print(len(b.positions))
     print(b.positions)
     print(b.repetition())
