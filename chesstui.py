@@ -77,14 +77,14 @@ class InfoBox(Container):
                 # yield EvaluationBar(id="evalFish")
     
     def add_single_move(self, move: str, number):
-        string = f"{number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
+        string = f" {number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
         move = Label(string, id="single")
         self.query_one("#moves").mount(move)
 
     def add_both_moves(self, move: list, number):
         self.query_one("#single").remove()
-        string = f"{number}. {move[0]:>6} {move[1]:>6}" 
-        move = Label(string, id="double")
+        string = f" {number}. {move[0]:>6} {move[1]:>6}" 
+        move = Label(string)
         self.query_one("#moves").mount(move)
 
     def update_moves(self, moves: list):
