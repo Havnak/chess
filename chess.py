@@ -471,7 +471,8 @@ class Board:
             if empty_squares > 0: fen += str(empty_squares)
             fen += "/"
         fen = fen[:-1] + " " # remove last "/"
-        fen += self.turn.lower() + " " + self.casteling + " "
+        casteling = "".join(self.casteling.split("-"))
+        fen += self.turn.lower() + " " + (casteling if casteling else "-")+ " "
 
         en_passant_target_square = self.en_passant_able
         if en_passant_target_square: fen += row_col_to_chess_notation(*en_passant_target_square) + " "

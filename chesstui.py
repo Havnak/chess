@@ -4,6 +4,7 @@ from textual.containers import Grid, Container, Horizontal, Vertical, Scrollable
 from textual.screen import ModalScreen
 from textual import on
 from textual.reactive import reactive
+import pyperclip 
 from rich.text import Text
 
 from chess import *
@@ -59,7 +60,7 @@ class ChessBoardVisual(Container):
                         else ""
                     )
                     yield ChessSquareVisual(
-                        row=row, col=col, piece_art=piece_art, id=f"r{row}c{col}"
+                        row=row, col=col, piece_art=piece_art, id=f"r{row}c{col}", classes="square"
                     )
 
 class InfoBox(Container):
@@ -75,8 +76,12 @@ class InfoBox(Container):
             with Grid():
                 yield ScrollableContainer(id="moves")
                 # yield EvaluationBar(id="evalFish")
-            yield Label(f"fen:\n{board.fen()}", id="fen")
-    
+            with Container(id="fen_box"):
+                with Horizontal():
+                    yield Label(f"fen: ")
+                    yield Button("copy", id="copyfen") 
+                yield Label(f"{board.fen()}", id="fen")
+        
     def add_single_move(self, move: str, number):
         string = f" {number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
         move = Label(string, id="single")
@@ -100,6 +105,8 @@ class InfoBox(Container):
             for label in labels:
                 label.remove()
         self.query_one("#fen").update(f"fen:\n{board.fen()}")
+
+
 
 
 
@@ -174,6 +181,10 @@ class ChessApp(App):
     def quit(self):
         exit()
 
+    @on(Button.Pressed, "#copyfen")
+    def copy_fen(self):
+        pyperclip.copy(board.fen())
+
     def action_reset_board(self):
         self.restart()
 
@@ -186,8 +197,8 @@ class ChessApp(App):
             yield info_box
         yield Footer()
 
-    @on(ChessSquareVisual.Pressed)
-    def handle_square_pressed(self, event: ChessSquareVisual.Pressed):
+    @on(Button.Pressed, "ChessSquareVisual")
+    def handle_square_pressed(self, event: Button.Pressed):
         square_pressed = event.button
         piece = board.chess_board[square_pressed.row][square_pressed.col]
 
@@ -228,7 +239,7 @@ class ChessApp(App):
                     
                     self.query_one(InfoBox).update_moves(board.moves_made)
             
-            self.query_one("#fen").update(f"fen:\n{board.fen()}")
+            self.query_one("#fen").update(f"{board.fen()}")
             self.update_board()
             selected_piece.reset()
 
