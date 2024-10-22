@@ -251,9 +251,9 @@ class Pawn(Piece):
                         col + self.col >= 0,
                         ]
                 ):
-                    if (self.row, self.col + col) == board.en_passant_able:
-                        if not check_after_move(self, self.row + row, self.col + col, board, self.color):
-                            self.legal_moves.append((self.row + row, self.col + col))
+                    if (self.row + 1 - 2*(self.color == "B"), self.col + col) == board.en_passant_able:
+                        if not check_after_move(self, self.row + 1 - 2*(self.color == "B"), self.col + col, board, self.color):
+                            self.legal_moves.append((self.row + 1 - 2*(self.color == "B"), self.col + col))
 
 
 class King(Piece):
@@ -426,6 +426,8 @@ class Board:
         self.en_passant_able = ()
         self.moves_made = []
         self.iscopy = False
+        self.halfmoves = 0
+        self.fullmoves = 1
         
 
     def __str__(self):
@@ -443,6 +445,30 @@ class Board:
 
     def __len__(self):
         return len(self.chess_board)
+
+    def fen(self):
+        fen = ""
+        for row in reversed(self.chess_board):
+            empty_squares = 0
+            for square in row:
+                if square:
+                    if empty_squares > 0: fen += str(empty_squares)
+                    fen += square.piece_type.upper() if square.color == "W" else square.piece_type
+                    empty_squares = 0
+                else:
+                    empty_squares += 1
+            if empty_squares > 0: fen += str(empty_squares)
+            fen += "/"
+        fen = fen[:-1] + " " # remove last "/"
+        fen += self.turn.lower() + " " + self.casteling + " "
+
+        en_passant_target_square = self.en_passant_able
+        if en_passant_target_square: fen += row_col_to_chess_notation(*en_passant_target_square) + " "
+        else: fen += "- "
+        
+        fen += str(self.halfmoves) + " " + str(self.fullmoves)
+
+        return fen
 
     def setup_board(self):
         board = []
@@ -488,9 +514,7 @@ class Board:
         return board
 
     def reset(self):
-        self.chess_board = self.setup_board()
-        self.turn = "W"
-        self.casteling = "KQkq"
+        self.__init__()
 
     def get_all_legal_moves(self):
         legal_moves = []
@@ -553,7 +577,7 @@ class Board:
 
         # --- en passant ---
         if (isinstance(piece, Pawn)):
-            if (row - direction, col) == self.en_passant_able:
+            if (row, col) == self.en_passant_able:
                 self.capture(row - direction, col)
 
         self.en_passant_able = ()
@@ -561,7 +585,7 @@ class Board:
             if ((piece.row, piece.color) in [(1,"W"), (6, "B")] # If pawn is on start row
                 and row == piece.row + 2*direction
                 ):
-                    self.en_passant_able = (row, col)
+                    self.en_passant_able = (row-direction, col)
             
         # --- promotion needs interaction, therefore it's handled in the UI ---
 
@@ -619,14 +643,25 @@ class Board:
                     self.casteling = "".join(["-" if castle == "q" else castle for castle in self.casteling])
                 if piece.col == 7:
                     self.casteling = "".join(["-" if castle == "k" else castle for castle in self.casteling])
+        self[piece.row][piece.col] = None
+        self.halfmoves += 1
+        if isinstance(piece, Pawn) or self[row][col]:
+            self.halfmoves = 0
 
-        self.chess_board[piece.row][piece.col] = None
         self.capture(row, col) # Before moving, capture piece if capture is going to happen
         piece.update_position(row, col)
         self.chess_board[row][col] = piece
         # --- turn finished ---
+        if self.turn == "B": self.fullmoves += 1
         self.turn = {"W": "B", "B": "W"}[self.turn]     
 
+    def fifty_moves(self):
+        if self.halfmoves == 100: return True
+        return False
+
+    def repetition(self):
+        return False
+    
 
     def detect_check(self):
         return check(self)
@@ -640,8 +675,8 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
-    b.capture(0, 5)
-    b.capture(0, 6)
-    b[0][4].update_legal_moves(b)
-    b.move(b[0][4], 0, 6)
+    b.move(b[0][1], 2, 2)
+    print(b.fen())
+    b.move(b[7][1], 5, 2)
+    print(b.fen())
     print(b)
