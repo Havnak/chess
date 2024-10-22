@@ -179,6 +179,8 @@ class Piece:
     def update_legal_moves(self, board):
         self.legal_moves = []
         moves = copy.copy(self.moves)
+
+        if board.game_end: return
     
         for row, col in moves:
             if all(
@@ -212,6 +214,8 @@ class Pawn(Piece):
     def update_legal_moves(self, board):
         self.legal_moves = []
         pinned, pin_direction = self.ispinned(board)
+
+        if board.game_end: return
 
         # --- moves ---
 
@@ -275,6 +279,9 @@ class King(Piece):
 
     def casteling_moves(self, board):
         row, col = self.row, self.col
+        if check(board):
+            return
+
         if self.piece_type == "k":
             if self.color == "W":
                 if "K" in board.casteling:
@@ -300,6 +307,7 @@ class King(Piece):
     
     def update_legal_moves(self, board):
         super().update_legal_moves(board)
+        if board.game_end: return
         self.casteling_moves(board)
 
 
@@ -327,6 +335,7 @@ class Slider(Piece):
 
     def update_legal_moves(self, board):
         self.legal_moves = []
+        if board.game_end: return
 
         # --- logic for pinning ---
         moves = copy.copy(self.moves)
@@ -428,6 +437,8 @@ class Board:
         self.iscopy = False
         self.halfmoves = 0
         self.fullmoves = 1
+        self.game_end = False
+        self.positions = []
         
 
     def __str__(self):
@@ -532,6 +543,7 @@ class Board:
         if len(self.get_all_legal_moves()) == 0:
             _, in_check = check(self)
             if in_check:
+                self.game_end = True
                 return True
         return False
 
@@ -539,7 +551,21 @@ class Board:
         if len(self.get_all_legal_moves()) == 0:
             _, in_check = check(self)
             if not in_check:
+                self.game_end = True
                 return True
+        return False
+
+    def fifty_moves(self):
+        if self.halfmoves == 100: 
+            self.game_end = True
+            return True
+        return False
+
+    def repetition(self):
+        current_fen = self.fen().split(" ")[0]
+        if sum([1 if current_fen in position else 0 for position in self.positions]) > 2:
+            self.game_end = True
+            return True
         return False
     
     def remis(self):
@@ -643,24 +669,20 @@ class Board:
                     self.casteling = "".join(["-" if castle == "q" else castle for castle in self.casteling])
                 if piece.col == 7:
                     self.casteling = "".join(["-" if castle == "k" else castle for castle in self.casteling])
+
         self[piece.row][piece.col] = None
         self.halfmoves += 1
         if isinstance(piece, Pawn) or self[row][col]:
             self.halfmoves = 0
+            self.positions = []
 
         self.capture(row, col) # Before moving, capture piece if capture is going to happen
         piece.update_position(row, col)
         self.chess_board[row][col] = piece
         # --- turn finished ---
         if self.turn == "B": self.fullmoves += 1
+        self.positions.append(self.fen().split(" ")[0])
         self.turn = {"W": "B", "B": "W"}[self.turn]     
-
-    def fifty_moves(self):
-        if self.halfmoves == 100: return True
-        return False
-
-    def repetition(self):
-        return False
     
 
     def detect_check(self):
@@ -676,7 +698,18 @@ class Board:
 if __name__ == "__main__":
     b = Board()
     b.move(b[0][1], 2, 2)
-    print(b.fen())
     b.move(b[7][1], 5, 2)
-    print(b.fen())
+    b.move(b[2][2], 0, 1)
+    b.move(b[5][2], 7, 1)
+    b.move(b[0][1], 2, 2)
+    b.move(b[7][1], 5, 2)
+    b.move(b[2][2], 0, 1)
+    b.move(b[5][2], 7, 1)
+    b.move(b[0][1], 2, 2)
+    b.move(b[7][1], 5, 2)
+    b.move(b[2][2], 0, 1)
+    b.move(b[5][2], 7, 1)
+    print(len(b.positions))
+    print(b.positions)
+    print(b.repetition())
     print(b)
