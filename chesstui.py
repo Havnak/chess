@@ -75,6 +75,7 @@ class InfoBox(Container):
             with Grid():
                 yield ScrollableContainer(id="moves")
                 # yield EvaluationBar(id="evalFish")
+            yield Label(f"fen:\n{board.fen()}", id="fen")
     
     def add_single_move(self, move: str, number):
         string = f" {number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
@@ -98,6 +99,7 @@ class InfoBox(Container):
         if labels:
             for label in labels:
                 label.remove()
+        self.query_one("#fen").update(f"fen:\n{board.fen()}")
 
 
 
@@ -172,7 +174,6 @@ class ChessApp(App):
     def quit(self):
         exit()
 
-
     def action_reset_board(self):
         self.restart()
 
@@ -213,20 +214,21 @@ class ChessApp(App):
 
         # --- Moving selected piece ---
         else:
+            if selected_piece.piece:
+                if (square_pressed.row,
+                    square_pressed.col,
+                ) in selected_piece.piece.legal_moves:
+                    board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
 
-            if (square_pressed.row,
-                square_pressed.col,
-            ) in selected_piece.piece.legal_moves:
-                board.move(selected_piece.piece, square_pressed.row, square_pressed.col)
-
-                # --- promotion ---
-                if isinstance(selected_piece.piece, Pawn) and selected_piece.piece.row in [0, 7]:
-                    raise NotImplementedError
-                    # TODO: Pop up for selecting piece
-                    board.promote_pawn(selected_piece.piece, new_piece)
-                
-                self.query_one(InfoBox).update_moves(board.moves_made)
+                    # --- promotion ---
+                    if isinstance(selected_piece.piece, Pawn) and selected_piece.piece.row in [0, 7]:
+                        raise NotImplementedError
+                        # TODO: Pop up for selecting piece
+                        board.promote_pawn(selected_piece.piece, new_piece)
+                    
+                    self.query_one(InfoBox).update_moves(board.moves_made)
             
+            self.query_one("#fen").update(f"fen:\n{board.fen()}")
             self.update_board()
             selected_piece.reset()
 
@@ -234,7 +236,10 @@ class ChessApp(App):
                 self.query_one("#gamestate").update("Checkmate")
 
             if board.stalemate():
-                self.query_one("#gamestate").update("Stalemate")
+                self.query_one("#gamestate").update("Remis: Stalemate")
 
-            if board.remis():
-                self.query_one("#gamestate").update("Remis")
+            if board.fifty_moves():
+                self.query_one("#gamestate").update("Remis: 50 move rule")
+
+            if board.repetition():
+                self.query_one("#gamestate").update("Remis: repetition")
