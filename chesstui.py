@@ -196,7 +196,7 @@ class ChessApp(App):
                 square.piece_art = Text(piece.piece_art, style="black") if piece else ""
                 square.standard_style()
 
-        king, check = board.detect_check()
+        king, check, attacking_piece = board.detect_check()
         if check:
             self.query_one(f"#r{king.row}c{king.col}").highlight_check()
 
@@ -281,8 +281,8 @@ class ChessApp(App):
                     self.query_one(InfoBox).update_moves(board.moves_made)
             
             self.query_one("#fen").update(f"{board.fen()}")
-            self.update_board()
             selected_piece.reset()
+            self.update_board()
 
             if board.checkmate():
                 self.query_one("#gamestate").update("Checkmate")

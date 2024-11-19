@@ -77,41 +77,40 @@ def piece_between(row1, col1, row2, col2, board) -> list:
 def check(board) -> tuple:
     """
     Returns:
-        king, bool
+        king, bool, piece attacking
     """
-    for king in board.kings.values():
-        for piece in board.pieces:
-            if piece.color == king.color:
-                continue
+    king = board.kings[board.turn]
 
-            if piece.piece_type in ["b", "q"]:
-                if on_diagonal(*king.pos, *piece.pos):
-                    if not piece_between(*king.pos, *piece.pos, board):
-                        return king, True
+    for piece in board.pieces:
+        if piece.color == king.color:
+            continue
 
-            if piece.piece_type in ["r", "q"]:
-                if on_straight(*king.pos, *piece.pos):
-                    if not piece_between(*king.pos, *piece.pos, board):
-                        return king, True
+        if piece.piece_type in ["b", "q"]:
+            if on_diagonal(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True, piece
 
-            if piece.piece_type == "p":
-                for row, col in piece.attacking_moves:
-                    if all(
-                        [
-                            king.row - row < 8,
-                            king.row - row >= 0,
-                            king.col - col < 8,
-                            king.col - col >= 0,
-                        ]
-                    ):
-                        if board[king.row - row][king.col - col]:
-                            if (
-                                board[king.row - row][king.col - col].color
-                                != king.color
-                            ):
-                                return king, True
+        if piece.piece_type in ["r", "q"]:
+            if on_straight(*king.pos, *piece.pos):
+                if not piece_between(*king.pos, *piece.pos, board):
+                    return king, True, piece
 
-    return None, False
+        # TODO Horse  and King
+
+        if piece.piece_type == "p":
+            for row, col in piece.attacking_moves:
+                if all(
+                    [
+                        king.row - row < 8,
+                        king.row - row >= 0,
+                        king.col - col < 8,
+                        king.col - col >= 0,
+                    ]
+                ):
+                    if (king.row - row, king.col - col) == piece.pos:
+                        return king, True, piece
+
+    return None, False, None
 
 
 def check_after_move(piece, row, col, board, color):
@@ -120,7 +119,7 @@ def check_after_move(piece, row, col, board, color):
     piece_copy = board_copy[piece.row][piece.col]
     board_copy.move(piece_copy, row, col)
     board_copy.turn = color
-    king, is_checked = check(board_copy)
+    king, is_checked, _ = check(board_copy)
     if not is_checked:
         return False
     if king.color == color:
@@ -343,7 +342,7 @@ class King(Piece):
 
     def casteling_moves(self, board):
         row, col = self.row, self.col
-        if check(board):
+        if check(board)[1]:
             return
 
         if self.piece_type == "k":
@@ -656,7 +655,7 @@ class Board:
 
     def checkmate(self):
         if len(self.get_all_legal_moves()) == 0:
-            _, in_check = check(self)
+            _, in_check, _ = check(self)
             if in_check:
                 self.game_end = True
                 return True
@@ -664,7 +663,7 @@ class Board:
 
     def stalemate(self):
         if len(self.get_all_legal_moves()) == 0:
-            _, in_check = check(self)
+            _, in_check, _ = check(self)
             if not in_check:
                 self.game_end = True
                 return True
@@ -836,9 +835,12 @@ class Board:
 
 if __name__ == "__main__":
     b = Board()
-    b.move(b[1][1], 7, 1)
-    b.promote_pawn("Q")
-    print(len(b.positions))
-    print(b.positions)
-    print(b.repetition())
+    b.capture(1, 4)
+    b.capture(1, 3)
+    b.capture(6, 3)
+    b.capture(6, 4)
+    b.move(b[0][3], 1, 4)
     print(b)
+    b[7][3].update_legal_moves(b)
+    print(b[7][3].legal_moves)
+
