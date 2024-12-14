@@ -117,14 +117,16 @@ class InfoBox(Container):
     def add_single_move(self, move: str, number):
         string = f" {number}. {move:>6}" # Longest sting is 6 chars, e.g. e4xe5#
         move = Label(string, id="single")
-        self.query_one("#moves").mount(move)
+        container = self.query_one("#moves")
+        container.mount(move)
         move.scroll_visible()
 
     def add_both_moves(self, move: list, number):
         self.query_one("#single").remove()
         string = f" {number}. {move[0]:>6} {move[1]:>6}" 
         move = Label(string)
-        self.query_one("#moves").mount(move)
+        container = self.query_one("#moves")
+        container.mount(move)
         move.scroll_visible()
 
     def update_moves(self, moves: list):
