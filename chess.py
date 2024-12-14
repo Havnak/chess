@@ -93,12 +93,11 @@ def check(board) -> tuple:
         if piece.piece_type in ["r", "q"]:
             if on_straight(*king.pos, *piece.pos):
                 if not piece_between(*king.pos, *piece.pos, board):
-                    return king, True, piece
+                    return king, True, piece            
 
-        # TODO Horse  and King
-
-        if piece.piece_type == "p":
-            for row, col in piece.attacking_moves:
+        if piece.piece_type in ["p", "k", "n"]:
+            moves = piece.moves if piece.piece_type != "p" else piece.attacking_moves
+            for row, col in moves:
                 if all(
                     [
                         king.row - row < 8,
