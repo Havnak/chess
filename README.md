@@ -1,6 +1,8 @@
 # chess
 A chess tui in python
 
+![Chess game](media/chess_game.gif)
+
 ### Implemented rules:
 - All movesets
 - En passant
